@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+  <defs>
+    <!-- Organic distortion for the main shape -->
+    <filter id="watercolor" x="-10%" y="-10%" width="120%" height="120%">
+      <!-- Base turbulence for organic edge distortion -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.006" numOctaves="5" seed="7" result="noise1"/>
+      <!-- Displace the shape with organic noise -->
+      <feDisplacementMap in="SourceGraphic" in2="noise1" scale="60" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <!-- Soft feathered edge (watercolor bleeding effect) -->
+      <feGaussianBlur in="displaced" stdDeviation="8" result="blurred"/>
+      <!-- Sharpen back slightly so it's not too mushy -->
+      <feComponentTransfer in="blurred" result="sharpened">
+        <feFuncA type="table" tableValues="0 0 0.3 0.7 1 1 1"/>
+      </feComponentTransfer>
+    </filter>
+
+    <!-- Extra paint splatter texture on edges -->
+    <filter id="splatter" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04 0.03" numOctaves="3" seed="12" result="splatNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="splatNoise" scale="20" xChannelSelector="R" yChannelSelector="G" result="splatDisplaced"/>
+      <feGaussianBlur in="splatDisplaced" stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Main watercolor shape — large organic blob -->
+  <ellipse
+    cx="960" cy="540"
+    rx="930" ry="510"
+    fill="black"
+    filter="url(#watercolor)"
+  />
+
+  <!-- Paint drip accents at edges for extra organic feel -->
+  <ellipse cx="120" cy="400" rx="80" ry="120" fill="black" filter="url(#splatter)" opacity="0.8"/>
+  <ellipse cx="1800" cy="650" rx="70" ry="100" fill="black" filter="url(#splatter)" opacity="0.7"/>
+  <ellipse cx="960" cy="80" rx="200" ry="50" fill="black" filter="url(#splatter)" opacity="0.6"/>
+  <ellipse cx="960" cy="1000" rx="180" ry="45" fill="black" filter="url(#splatter)" opacity="0.7"/>
+</svg>

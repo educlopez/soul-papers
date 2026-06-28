@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Soul Papers ✈️
+
+> *Stories that remind us why the little things matter.*
+
+A contemplative reading experience — exactly **2 curated stories per day**, delivered as animated paper planes floating across a lofi-inspired scene. Click a plane, watch it unfold into a handwritten letter, read something beautiful.
+
+No algorithm. No infinite scroll. Just two stories, daily.
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
+[![GSAP](https://img.shields.io/badge/GSAP-3-88ce02?logo=greensock)](https://gsap.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://soul-papers.vercel.app)
+
+---
+
+![Soul Papers — home screen with animated paper planes](public/images/screenshot-home.png)
+
+---
+
+## The Idea
+
+Soul Papers pushes back against the attention economy. Every design decision is intentional:
+
+- **2 stories per day** — scarcity makes each one feel like a gift
+- **Paper plane metaphor** — stories arrive like letters from a stranger
+- **Lofi aesthetic** — warm textures, handwriting fonts, ambient audio
+- **No engagement metrics** — no likes, no streaks, no notifications
+
+New stories unlock at midnight. The ones you missed are gone until the pool resets.
+
+---
+
+## Screenshots
+
+| Home | About |
+|---|---|
+| ![Home](public/images/screenshot-home.png) | ![About](public/images/screenshot-about.png) |
+
+---
+
+## Features
+
+- **Animated paper planes** — GSAP MotionPathPlugin drives curved flight paths across the scene
+- **Paper letter modal** — click a plane to unfold a scrollable letter with MDX-rendered story content
+- **Daily rotation** — `localStorage` tracks reads; 2 new stories unlock each midnight
+- **Lofi video background** — warm ambient loop with audio toggle
+- **Intro overlay** — cinematic splash screen, auto-skipped after 2 reads
+- **Three.js 3D mode** — optional alternative rendering with depth and perspective
+- **Accessibility** — WCAG-compliant tap targets (≥44px), reduced-motion support, semantic HTML
+
+---
+
+## Tech Stack
+
+| Layer | Tech |
+|---|---|
+| Framework | [Next.js 16](https://nextjs.org) — App Router, static export |
+| Styling | [Tailwind CSS 4](https://tailwindcss.com) |
+| Animation | [GSAP 3](https://gsap.com) + MotionPathPlugin |
+| 3D (optional) | [Three.js](https://threejs.org) |
+| Content | [MDX](https://mdxjs.com) + [gray-matter](https://github.com/jonschlinkert/gray-matter) |
+| Testing | [Vitest](https://vitest.dev) |
+| Linting | [Biome](https://biomejs.dev) |
+| Package manager | [pnpm](https://pnpm.io) |
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Other commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm build        # Production build
+pnpm test         # Run tests
+pnpm lint         # Lint with Biome
+pnpm lint:fix     # Auto-fix lint issues
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Adding Stories
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Drop a `.mdx` file in `content/stories/`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```mdx
+---
+title: The Name of the Story
+author: Author Name
+date: 2026-01-01
+tags: [memory, connection]
+slug: the-name-of-the-story
+---
 
-## Deploy on Vercel
+Your story content here. Write from the heart — these are the small moments
+that change everything.
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Stories are selected randomly — 2 per day, no repeats until the pool resets.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Project Structure
+
+```
+soul-papers/
+├── content/
+│   └── stories/              # MDX story files — add yours here
+├── public/
+│   ├── audio/                # Lofi ambient track
+│   ├── images/               # Static assets + screenshots
+│   └── video/                # Background video loop
+└── src/
+    ├── app/
+    │   ├── (main)/
+    │   │   ├── page.tsx      # Home — animated scene
+    │   │   └── about/        # About page
+    │   └── layout.tsx
+    ├── components/
+    │   ├── scene.tsx          # Main orchestrator
+    │   ├── paper-plane.tsx    # GSAP-animated SVG plane
+    │   ├── paper-letter.tsx   # Story letter modal
+    │   ├── video-background.tsx
+    │   └── audio-controls.tsx
+    └── lib/
+        ├── stories.ts         # File-based MDX loader
+        ├── random-story.ts    # Daily 2-story picker
+        └── reading-state.ts   # localStorage read tracker
+```
+
+---
+
+## License
+
+[MIT](LICENSE)

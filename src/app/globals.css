@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+	--font-serif: "Georgia", "Times New Roman", serif;
+	--font-handwriting: var(--font-handwriting), "Caveat", cursive;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+	scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	@apply antialiased text-neutral-800 bg-white;
+}
+
+.prose {
+	@apply max-w-none;
+	@apply text-lg leading-relaxed;
+	@apply text-neutral-700;
+}
+
+.prose p {
+	@apply mb-6;
+}
+
+.prose h1 {
+	@apply text-3xl font-bold mb-4 text-neutral-900;
+}
+
+.prose h2 {
+	@apply text-2xl font-semibold mb-3 text-neutral-900;
+}
+
+.prose blockquote {
+	@apply border-l-4 border-neutral-300 pl-4 italic text-neutral-600 my-6;
+}
+
+.prose em {
+	@apply italic;
+}
+
+.prose strong {
+	@apply font-semibold text-neutral-900;
+}
+
+/* ===== Scene & Letter Styles ===== */
+
+/* Hide scrollbar on scene */
+.scene-no-scroll {
+	overflow: hidden;
+}
+
+/* Paper letter scrollbar styling */
+.letter-scroll::-webkit-scrollbar {
+	width: 6px;
+}
+
+.letter-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.letter-scroll::-webkit-scrollbar-thumb {
+	background: #d4c5a9;
+	border-radius: 3px;
+}
+
+/* Paper texture overlay */
+.paper-texture {
+	background-color: #faf6f0;
+	background-image:
+		/* Subtle fiber/grain noise */
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+		/* Warm parchment gradient */
+		linear-gradient(
+			168deg,
+			#fdf8f0 0%,
+			#f8f0e0 25%,
+			#faf5eb 50%,
+			#f5ece0 75%,
+			#fdf8f0 100%
+		);
+}
+
+/* Aged paper edge effect */
+.paper-edges {
+	box-shadow:
+		/* Inner shadow for depth */
+		inset 0 0 30px rgba(139, 119, 85, 0.08),
+		inset 0 0 80px rgba(139, 119, 85, 0.04),
+		/* Outer shadow */
+		0 8px 32px rgba(0, 0, 0, 0.15),
+		0 2px 8px rgba(0, 0, 0, 0.1),
+		/* Subtle border glow */
+		0 0 0 1px rgba(212, 197, 169, 0.25);
+}
+
+/* Ruled lines like notebook paper */
+.paper-ruled {
+	background-image: repeating-linear-gradient(
+		transparent,
+		transparent 31px,
+		rgba(176, 160, 132, 0.15) 31px,
+		rgba(176, 160, 132, 0.15) 32px
+	);
+	background-size: 100% 32px;
+	background-position: 0 8px;
 }

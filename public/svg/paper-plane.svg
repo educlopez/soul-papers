@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Paper plane body -->
+  <path d="M4 32L28 28L60 4L36 36L28 28" fill="#F5F0E8" stroke="#D4C5A9" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Wing fold line -->
+  <path d="M28 28L60 4L36 36" fill="#EDE6D6" stroke="#D4C5A9" stroke-width="1" stroke-linejoin="round"/>
+  <!-- Bottom wing shadow -->
+  <path d="M28 28L36 36L24 56L28 28" fill="#E8E0D0" stroke="#D4C5A9" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Subtle inner fold -->
+  <path d="M28 28L32 44" stroke="#D4C5A9" stroke-width="0.75" opacity="0.5"/>
+</svg>

@@ -15,7 +15,7 @@ No algorithm. No infinite scroll. Just two stories, daily.
 
 ---
 
-![Soul Papers — home screen with animated paper planes](public/images/screenshot-home.png)
+<img src="public/images/screenshot-home.png" alt="Soul Papers — home screen with animated paper planes" width="700" />
 
 ---
 
@@ -36,7 +36,7 @@ New stories unlock at midnight. The ones you missed are gone until the pool rese
 
 | Home | About |
 |---|---|
-| ![Home](public/images/screenshot-home.png) | ![About](public/images/screenshot-about.png) |
+| <img src="public/images/screenshot-home.png" width="380" /> | <img src="public/images/screenshot-about.png" width="380" /> |
 
 ---
 

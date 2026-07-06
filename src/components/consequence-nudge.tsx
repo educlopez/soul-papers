@@ -9,21 +9,26 @@ const TALLY_FORM_URL = process.env.NEXT_PUBLIC_TALLY_URL || "https://tally.so/r/
 interface ConsequenceNudgeProps {
 	story: { nudge?: string };
 	/**
-	 * Warm communal read count for this letter. Wired by the Counter slice
-	 * (fetchCount); left undefined/null here keeps this component self-contained
-	 * for v1 — the count line is simply omitted until it's available.
+	 * Warm communal read count for this letter, from `fetchCount` (Counter
+	 * slice). The line only renders when `count >= 3` (ADR-5 threshold) — a
+	 * brand-new or lightly-read letter omits it entirely rather than showing a
+	 * cold "1 persona".
 	 */
 	count?: number | null;
 }
 
 /**
- * Post-close overlay: a brief consequence nudge, the "Leave your letter"
- * submission entry point, a warm return-tomorrow message, and a soft door
- * into the archive.
+ * Post-close overlay: a brief consequence nudge, the warm per-letter read
+ * count (once it clears the threshold), the "Leave your letter" submission
+ * entry point, a warm return-tomorrow message, and a soft door into the
+ * archive.
  */
 export function ConsequenceNudge({ story, count = null }: ConsequenceNudgeProps) {
 	const cardRef = useRef<HTMLDivElement>(null);
+	const countRef = useRef<HTMLParagraphElement>(null);
 	const nudge = useRef(getNudge(story)).current;
+	// Only shown once the letter has kept enough people company — avoids a lonely "1 persona".
+	const showCount = count != null && count >= 3;
 
 	useEffect(() => {
 		const el = cardRef.current;
@@ -42,6 +47,22 @@ export function ConsequenceNudge({ story, count = null }: ConsequenceNudgeProps)
 		);
 	}, []);
 
+	// The count arrives asynchronously (after fetchCount resolves), often once the
+	// card is already visible — fade it in on its own rather than popping in.
+	useEffect(() => {
+		if (!showCount) return;
+		const el = countRef.current;
+		if (!el) return;
+
+		const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		if (reducedMotion) {
+			gsap.set(el, { opacity: 1, y: 0 });
+			return;
+		}
+
+		gsap.fromTo(el, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" });
+	}, [showCount]);
+
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
 			<div
@@ -53,8 +74,12 @@ export function ConsequenceNudge({ story, count = null }: ConsequenceNudgeProps)
 					{nudge}
 				</p>
 
-				{count != null && count >= 3 && (
-					<p className="text-sm text-neutral-500 mb-6 italic">
+				{showCount && (
+					<p
+						ref={countRef}
+						className="text-sm text-neutral-500 mb-6 italic"
+						style={{ opacity: 0 }}
+					>
 						this letter has kept {count} people company
 					</p>
 				)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { recordRead } from "@/lib/read-counter";
 import { markArchiveRead } from "@/lib/reading-state";
 import type { Story } from "@/lib/types";
 import { PaperLetter } from "./paper-letter";
@@ -13,13 +14,16 @@ interface ArchiveBrowserProps {
  * Client-side interactive piece of the /archive route: lets the visitor open
  * any past letter via the reused PaperLetter overlay. Opening a letter here
  * calls `markArchiveRead`, never `markTodayRead` — browsing the archive is
- * exempt from the daily ritual state.
+ * exempt from the daily ritual state. Also fires `recordRead` (fire-and-forget,
+ * at most once per visitor per letter) so archive reads contribute to the
+ * warm per-letter counter too.
  */
 export function ArchiveBrowser({ letters }: ArchiveBrowserProps) {
 	const [openStory, setOpenStory] = useState<Story | null>(null);
 
 	const handleOpen = useCallback((story: Story) => {
 		markArchiveRead(story.slug);
+		recordRead(story.slug);
 		setOpenStory(story);
 	}, []);
 

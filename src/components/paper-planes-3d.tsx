@@ -10,98 +10,66 @@ interface PaperPlanes3DProps {
 }
 
 /**
- * Creates a 3D paper plane geometry from deformed boxes.
- * Adapted from Sanchez3/paperplanes.
+ * Creates a 3D paper dart from explicit triangles: two swept delta wings
+ * meeting at a center crease, plus a folded keel underneath.
+ * Nose points +X (matches velocity-based orientation in the animation loop).
  */
 function createPlaneModel(): THREE.Group {
 	const group = new THREE.Group();
 
-	const mat = new THREE.MeshPhongMaterial({
-		color: 0xfaf6f0,
+	const wingMat = new THREE.MeshPhongMaterial({
+		color: 0xf5f0e8,
 		flatShading: true,
 		side: THREE.DoubleSide,
 		transparent: true,
-		opacity: 0.92,
+		opacity: 0.95,
+	});
+	const keelMat = new THREE.MeshPhongMaterial({
+		color: 0xd4c5a9,
+		flatShading: true,
+		side: THREE.DoubleSide,
+		transparent: true,
+		opacity: 0.95,
 	});
 
-	// Right fuselage — narrow width (z: 0.6 instead of 2)
-	const rightBody = new THREE.BoxGeometry(14, 2, 0.6);
-	const rbPos = rightBody.attributes.position;
-	for (let i = 0; i < rbPos.count; i++) {
-		const x = rbPos.getX(i);
-		const y = rbPos.getY(i);
-		const z = rbPos.getZ(i);
-		if (x > 0) {
-			rbPos.setY(i, y + (x / 7) * 1.5);
-			rbPos.setZ(i, z * 0.3);
-		}
-		if (x < 0) {
-			rbPos.setZ(i, z * 0.6);
-		}
-	}
-	rightBody.computeVertexNormals();
-	const rightMesh = new THREE.Mesh(rightBody, mat);
-	rightMesh.position.set(0, -0.3, 0.15);
-	group.add(rightMesh);
+	// Shared vertices (unit-ish dart, ~1.1 long, ~1.0 wingspan)
+	const nose: [number, number, number] = [0.6, 0, 0];
+	const tailCrease: [number, number, number] = [-0.5, 0.04, 0];
+	const tipLeft: [number, number, number] = [-0.5, 0.14, -0.5];
+	const tipRight: [number, number, number] = [-0.5, 0.14, 0.5];
+	const keelBottom: [number, number, number] = [-0.5, -0.22, 0];
 
-	// Left fuselage (mirror) — narrow width
-	const leftBody = new THREE.BoxGeometry(14, 2, 0.6);
-	const lbPos = leftBody.attributes.position;
-	for (let i = 0; i < lbPos.count; i++) {
-		const x = lbPos.getX(i);
-		const y = lbPos.getY(i);
-		const z = lbPos.getZ(i);
-		if (x > 0) {
-			lbPos.setY(i, y + (x / 7) * 1.5);
-			lbPos.setZ(i, z * 0.3);
-		}
-		if (x < 0) {
-			lbPos.setZ(i, z * 0.6);
-		}
-	}
-	leftBody.computeVertexNormals();
-	const leftMesh = new THREE.Mesh(leftBody, mat);
-	leftMesh.position.set(0, -0.3, -0.15);
-	group.add(leftMesh);
+	const triangle = (
+		a: [number, number, number],
+		b: [number, number, number],
+		c: [number, number, number],
+		material: THREE.Material,
+	) => {
+		const geo = new THREE.BufferGeometry();
+		geo.setAttribute(
+			"position",
+			new THREE.Float32BufferAttribute([...a, ...b, ...c], 3),
+		);
+		geo.computeVertexNormals();
+		return new THREE.Mesh(geo, material);
+	};
 
-	// Right wing (thin, swept)
-	const rightWing = new THREE.BoxGeometry(12, 0.05, 6);
-	const rwPos = rightWing.attributes.position;
-	for (let i = 0; i < rwPos.count; i++) {
-		const x = rwPos.getX(i);
-		const z = rwPos.getZ(i);
-		if (z > 0) {
-			rwPos.setX(i, x - z * 0.8);
-		}
-		if (x < -3 && z > 1) {
-			rwPos.setZ(i, z * 0.5);
-		}
-	}
-	rightWing.computeVertexNormals();
-	const rwMesh = new THREE.Mesh(rightWing, mat);
-	rwMesh.position.set(-1, 0.1, 3);
-	group.add(rwMesh);
+	// Wings: nose → tail crease → wingtip (slight dihedral, tips raised)
+	group.add(triangle(nose, tailCrease, tipRight, wingMat));
+	group.add(triangle(nose, tipLeft, tailCrease, wingMat));
 
-	// Left wing (mirror)
-	const leftWing = new THREE.BoxGeometry(12, 0.05, 6);
-	const lwPos = leftWing.attributes.position;
-	for (let i = 0; i < lwPos.count; i++) {
-		const x = lwPos.getX(i);
-		const z = lwPos.getZ(i);
-		if (z < 0) {
-			lwPos.setX(i, x + z * 0.8);
-		}
-		if (x < -3 && z < -1) {
-			lwPos.setZ(i, z * 0.5);
-		}
-	}
-	leftWing.computeVertexNormals();
-	const lwMesh = new THREE.Mesh(leftWing, mat);
-	lwMesh.position.set(-1, 0.1, -3);
-	group.add(lwMesh);
+	// Keel: vertical center fold under the wings
+	group.add(triangle(nose, keelBottom, tailCrease, keelMat));
 
-	// Scale down to reasonable size
-	group.scale.setScalar(0.035);
+	// Invisible generous hit area — raycasting against the thin triangles alone
+	// makes planes nearly impossible to click while they move
+	const hitArea = new THREE.Mesh(
+		new THREE.SphereGeometry(0.9),
+		new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+	);
+	group.add(hitArea);
+
+	group.scale.setScalar(0.55);
 
 	return group;
 }
@@ -122,9 +90,9 @@ class Boid {
 			(Math.random() - 0.5) * worldZ,
 		);
 		this.velocity = new THREE.Vector3(
-			(Math.random() - 0.5) * 0.015,
-			(Math.random() - 0.5) * 0.006,
-			(Math.random() - 0.5) * 0.01,
+			(Math.random() - 0.5) * 0.007,
+			(Math.random() - 0.5) * 0.003,
+			(Math.random() - 0.5) * 0.005,
 		);
 		this.acceleration = new THREE.Vector3();
 		this.worldSize = new THREE.Vector3(worldX, worldY, worldZ);
@@ -183,7 +151,7 @@ class Boid {
 	private move() {
 		this.velocity.add(this.acceleration);
 		// Slow max speed for gentle floating
-		const maxSpeed = 0.03;
+		const maxSpeed = 0.012;
 		const speed = this.velocity.length();
 		if (speed > maxSpeed) this.velocity.multiplyScalar(maxSpeed / speed);
 		this.position.add(this.velocity);
@@ -225,7 +193,7 @@ export function PaperPlanes3D({
 		camera.position.z = 5;
 
 		// --- Lighting ---
-		scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+		scene.add(new THREE.AmbientLight(0xffffff, 0.85));
 		const dirLight = new THREE.DirectionalLight(0xfff8e8, 1.5);
 		dirLight.position.set(3, 4, 5);
 		scene.add(dirLight);
@@ -236,7 +204,8 @@ export function PaperPlanes3D({
 		// --- Create planes ---
 		const worldX = 4 * aspect;
 		const worldY = 3;
-		const worldZ = 3;
+		// Keep planes at least ~3 units from the camera (z=5) so none fills the screen
+		const worldZ = 2;
 		const boids: Boid[] = [];
 		const planeModels: THREE.Group[] = [];
 
@@ -245,6 +214,7 @@ export function PaperPlanes3D({
 			boids.push(boid);
 
 			const model = createPlaneModel();
+			model.scale.multiplyScalar(0.8 + Math.random() * 0.4);
 			model.position.copy(boid.position);
 			scene.add(model);
 			planeModels.push(model);

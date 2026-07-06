@@ -1,7 +1,8 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import { getAllStorySlugs, parseStoryFile } from "@/lib/stories";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getAllStories, getAllStorySlugs, parseStoryFile } from "@/lib/stories";
 
 const fixtureDir = path.join(__dirname, "fixtures");
 const fixtureFile = path.join(fixtureDir, "test-story.mdx");
@@ -60,5 +61,50 @@ describe("getAllStorySlugs", () => {
 		for (const slug of slugs) {
 			expect(fs.existsSync(path.join(fixtureDir, `${slug}.mdx`))).toBe(true);
 		}
+	});
+});
+
+describe("getAllStories", () => {
+	let corruptDir: string;
+
+	beforeEach(() => {
+		corruptDir = fs.mkdtempSync(path.join(os.tmpdir(), "soul-papers-stories-"));
+		fs.writeFileSync(
+			path.join(corruptDir, "good-letter.mdx"),
+			[
+				"---",
+				'title: "Good Letter"',
+				'author: "Someone"',
+				'date: "2026-01-01"',
+				"---",
+				"",
+				"Body.",
+			].join("\n"),
+		);
+		// Unclosed double-quoted YAML scalar — gray-matter/js-yaml throws on parse.
+		fs.writeFileSync(
+			path.join(corruptDir, "bad-letter.mdx"),
+			["---", 'title: "Broken', 'author: "Someone"', "---", "", "Body."].join("\n"),
+		);
+		vi.spyOn(console, "error").mockImplementation(() => undefined);
+	});
+
+	afterEach(() => {
+		fs.rmSync(corruptDir, { recursive: true, force: true });
+		vi.restoreAllMocks();
+	});
+
+	it("skips a malformed MDX file, logs its filename, and still returns the good stories", () => {
+		let stories: ReturnType<typeof getAllStories> = [];
+		expect(() => {
+			stories = getAllStories(corruptDir);
+		}).not.toThrow();
+
+		expect(stories).toHaveLength(1);
+		expect(stories[0].title).toBe("Good Letter");
+		expect(console.error).toHaveBeenCalledWith(
+			expect.stringContaining("bad-letter.mdx"),
+			expect.anything(),
+		);
 	});
 });

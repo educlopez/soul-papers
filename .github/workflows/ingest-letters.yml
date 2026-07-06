@@ -1,0 +1,103 @@
+name: Ingest Tally Letters
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+# Least-privilege default; jobs escalate only where they need to (repo-standards).
+permissions:
+  contents: read
+
+# One ingestion run at a time — also doubles as a cheap guard against two
+# overlapping runs assigning the same "next free date" to different letters.
+concurrency:
+  group: ingest-letters
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Discover new submissions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      ids: ${{ steps.list.outputs.ids }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: List new Tally submissions
+        id: list
+        env:
+          TALLY_API_KEY: ${{ secrets.TALLY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm ingest:list
+
+  create-pr:
+    name: Open PR for letter ${{ matrix.tally_id }}
+    needs: discover
+    if: needs.discover.outputs.ids != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        tally_id: ${{ fromJson(needs.discover.outputs.ids) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write letter MDX
+        id: write
+        env:
+          TALLY_API_KEY: ${{ secrets.TALLY_API_KEY }}
+          TALLY_ID: ${{ matrix.tally_id }}
+        run: pnpm ingest:write "$TALLY_ID"
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.write.outputs.branch }}
+          add-paths: content/stories/*.mdx
+          commit-message: "feat(letters): add letter '${{ steps.write.outputs.title }}'"
+          title: "Letter: ${{ steps.write.outputs.title }}"
+          body: |
+            **Tally submission:** ${{ steps.write.outputs.tallyId }}
+
+            Merging publishes this letter starting its scheduled date. Feel free to
+            edit the title, date, or add a `nudge:` override before merging.
+
+            ${{ steps.write.outputs.body }}
+          labels: letter

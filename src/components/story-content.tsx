@@ -4,6 +4,26 @@ interface StoryContentProps {
 	author: string;
 }
 
+/** Escapes HTML-significant characters so raw markup in untrusted text (e.g.
+ * a Tally submission) is displayed as literal text instead of executing. */
+export function escapeHtml(text: string): string {
+	return text
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+/** Escapes the raw paragraph text FIRST, then applies the bold/italic
+ * markdown transform — so only our own generated <strong>/<em> tags survive
+ * and any HTML embedded in the raw text can never reach the DOM as markup. */
+export function renderParagraphHtml(paragraph: string): string {
+	return escapeHtml(paragraph)
+		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+		.replace(/\*(.+?)\*/g, "<em>$1</em>");
+}
+
 /**
  * Renders story content styled as a handwritten letter on paper.
  */
@@ -46,10 +66,9 @@ export function StoryContent({ content, title, author }: StoryContentProps) {
 					<p
 						key={paragraph.slice(0, 40)}
 						className="mb-[32px]"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: renderParagraphHtml HTML-escapes the raw text before applying the bold/italic transform, so no unescaped markup reaches the DOM.
 						dangerouslySetInnerHTML={{
-							__html: paragraph
-								.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-								.replace(/\*(.+?)\*/g, "<em>$1</em>"),
+							__html: renderParagraphHtml(paragraph),
 						}}
 					/>
 				))}

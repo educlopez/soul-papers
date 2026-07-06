@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 		"Stories that remind us why the little things matter. Open a paper plane from a stranger.",
 	openGraph: {
 		title: "Soul Papers",
-		description: "Two stories a day about the small things that change everything.",
+		description: "One letter a day.",
 		type: "website",
 		locale: "en_US",
 		siteName: "Soul Papers",

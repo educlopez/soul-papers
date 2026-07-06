@@ -17,6 +17,30 @@ describe("parseStoryFile", () => {
 		expect(story.slug).toBe("test-story");
 	});
 
+	it("reads optional nudge and tallyId frontmatter fields when present", () => {
+		const raw = [
+			"---",
+			'title: "Overridden Nudge"',
+			'author: "Test Author"',
+			'date: "2026-01-02"',
+			'nudge: "Llama a tu hermana hoy."',
+			'tallyId: "abc123"',
+			"---",
+			"",
+			"Body text.",
+		].join("\n");
+		const story = parseStoryFile(raw, "overridden-nudge");
+		expect(story.nudge).toBe("Llama a tu hermana hoy.");
+		expect(story.tallyId).toBe("abc123");
+	});
+
+	it("leaves nudge and tallyId undefined when absent from frontmatter", () => {
+		const raw = fs.readFileSync(fixtureFile, "utf-8");
+		const story = parseStoryFile(raw, "test-story");
+		expect(story.nudge).toBeUndefined();
+		expect(story.tallyId).toBeUndefined();
+	});
+
 	it("extracts content body", () => {
 		const raw = fs.readFileSync(fixtureFile, "utf-8");
 		const story = parseStoryFile(raw, "test-story");

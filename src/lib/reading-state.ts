@@ -1,20 +1,23 @@
-const DAILY_KEY = "hpv_read_today";
-const HISTORY_KEY = "hpv_read_history";
-const MAX_DAILY_READS = 999; // TODO: restore to 2 after demo
+import { getMadridDay } from "./time";
 
-export interface ReadingState {
+const STATE_KEY = "hpv_reading_state";
+const ARCHIVE_KEY = "hpv_archive_history";
+const SCHEMA_VERSION = 2;
+
+interface ReadingStateV2 {
+	v: 2;
 	date: string;
-	slugs: string[];
+	/** Slug of today's ritual letter once read, or null if unread today. */
+	today: string | null;
 }
 
 // In-memory fallback when localStorage is unavailable
-let memoryState: ReadingState = { date: getTodayUTC(), slugs: [] };
-let memoryHistory: string[] = [];
+let memoryState: ReadingStateV2 = freshStateFor(getMadridDay());
+let memoryArchive: string[] = [];
 let useMemory = false;
 
-function getTodayUTC(): string {
-	const now = new Date();
-	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
+function freshStateFor(date: string): ReadingStateV2 {
+	return { v: SCHEMA_VERSION, date, today: null };
 }
 
 function tryGetItem(key: string): string | null {
@@ -34,103 +37,92 @@ function trySetItem(key: string, value: string): void {
 	}
 }
 
-export function getReadingState(): ReadingState {
+function isValidV2(value: unknown): value is ReadingStateV2 {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value as Partial<ReadingStateV2>;
+	return (
+		candidate.v === SCHEMA_VERSION &&
+		typeof candidate.date === "string" &&
+		(candidate.today === null || typeof candidate.today === "string")
+	);
+}
+
+function loadState(): ReadingStateV2 {
+	const today = getMadridDay();
+
 	if (useMemory) {
-		if (memoryState.date !== getTodayUTC()) {
-			memoryState = { date: getTodayUTC(), slugs: [] };
+		if (memoryState.date !== today) {
+			memoryState = freshStateFor(today);
 		}
-		return { ...memoryState };
+		return memoryState;
 	}
 
-	const raw = tryGetItem(DAILY_KEY);
-	if (!raw) {
-		const fresh: ReadingState = { date: getTodayUTC(), slugs: [] };
-		trySetItem(DAILY_KEY, JSON.stringify(fresh));
-		return fresh;
-	}
+	const raw = tryGetItem(STATE_KEY);
+	if (!raw) return freshStateFor(today);
 
 	try {
-		const parsed: ReadingState = JSON.parse(raw);
-		if (parsed.date !== getTodayUTC()) {
-			const fresh: ReadingState = { date: getTodayUTC(), slugs: [] };
-			trySetItem(DAILY_KEY, JSON.stringify(fresh));
-			return fresh;
+		const parsed: unknown = JSON.parse(raw);
+		if (!isValidV2(parsed) || parsed.date !== today) {
+			return freshStateFor(today);
 		}
 		return parsed;
 	} catch {
-		const fresh: ReadingState = { date: getTodayUTC(), slugs: [] };
-		trySetItem(DAILY_KEY, JSON.stringify(fresh));
-		return fresh;
+		return freshStateFor(today);
 	}
 }
 
-export function markAsRead(slug: string, allSlugs?: string[]): void {
-	const state = getReadingState();
-	if (state.slugs.includes(slug)) return;
-
-	state.slugs.push(slug);
-
+function saveState(state: ReadingStateV2): void {
 	if (useMemory) {
 		memoryState = state;
-		if (!memoryHistory.includes(slug)) {
-			memoryHistory.push(slug);
-		}
-		if (allSlugs) recycleIfNeeded(allSlugs);
 		return;
 	}
-
-	trySetItem(DAILY_KEY, JSON.stringify(state));
-
-	// Update history
-	const historyRaw = tryGetItem(HISTORY_KEY);
-	const history: string[] = historyRaw ? JSON.parse(historyRaw) : [];
-	if (!history.includes(slug)) {
-		history.push(slug);
-		trySetItem(HISTORY_KEY, JSON.stringify(history));
-	}
-
-	if (allSlugs) recycleIfNeeded(allSlugs);
+	trySetItem(STATE_KEY, JSON.stringify(state));
 }
 
 /**
- * Resets read history when all stories have been read, so the cycle can start fresh.
+ * Whether the visitor has already read today's (Madrid) ritual letter,
+ * identified by slug. Replaces the old daily-cap counter.
  */
-export function recycleIfNeeded(allSlugs: string[]): void {
-	if (allSlugs.length === 0) return;
+export function hasReadToday(slug: string): boolean {
+	return loadState().today === slug;
+}
 
+/** Marks today's ritual letter as read for the current Madrid day. */
+export function markTodayRead(slug: string): void {
+	const state = loadState();
+	saveState({ ...state, today: slug });
+}
+
+/**
+ * Records that a past (archive) letter was read. Deliberately independent of
+ * `hasReadToday` — browsing the archive never affects the daily ritual state.
+ */
+export function markArchiveRead(slug: string): void {
 	if (useMemory) {
-		const allRead = allSlugs.every((s) => memoryHistory.includes(s));
-		if (allRead) memoryHistory = [];
+		if (!memoryArchive.includes(slug)) memoryArchive.push(slug);
 		return;
 	}
 
-	const historyRaw = tryGetItem(HISTORY_KEY);
-	const history: string[] = historyRaw ? JSON.parse(historyRaw) : [];
-	const allRead = allSlugs.every((s) => history.includes(s));
-	if (allRead) {
-		trySetItem(HISTORY_KEY, JSON.stringify([]));
+	const raw = tryGetItem(ARCHIVE_KEY);
+	const history: string[] = raw ? JSON.parse(raw) : [];
+	if (!history.includes(slug)) {
+		history.push(slug);
+		trySetItem(ARCHIVE_KEY, JSON.stringify(history));
 	}
 }
 
-export function canReadMore(): boolean {
-	const state = getReadingState();
-	return state.slugs.length < MAX_DAILY_READS;
-}
-
-export function getReadToday(): string[] {
-	return getReadingState().slugs;
-}
-
-export function resetIfNewDay(): void {
-	// getReadingState already handles date checking and resetting
-	getReadingState();
+/** Returns the list of archive letter slugs the visitor has opened. */
+export function getArchiveHistory(): string[] {
+	if (useMemory) return [...memoryArchive];
+	const raw = tryGetItem(ARCHIVE_KEY);
+	return raw ? JSON.parse(raw) : [];
 }
 
 /**
  * Resets the in-memory fallback state. Exported for testing only.
  */
 export function _resetForTesting(): void {
-	memoryState = { date: getTodayUTC(), slugs: [] };
-	memoryHistory = [];
+	memoryState = freshStateFor(getMadridDay());
+	memoryArchive = [];
 	useMemory = false;
 }

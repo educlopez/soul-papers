@@ -28,13 +28,22 @@ export function getAllStorySlugs(dir: string = STORIES_DIR): string[] {
 		.sort();
 }
 
+/** Reads and parses every story in `dir`. A single malformed MDX file (e.g.
+ * broken frontmatter from a bad ingestion) is skipped — logged and excluded
+ * — rather than throwing and taking down every page that lists stories. */
 export function getAllStories(dir: string = STORIES_DIR): Story[] {
 	const slugs = getAllStorySlugs(dir);
-	return slugs.map((slug) => {
+	const stories: Story[] = [];
+	for (const slug of slugs) {
 		const filePath = path.join(dir, `${slug}.mdx`);
-		const raw = fs.readFileSync(filePath, "utf-8");
-		return parseStoryFile(raw, slug);
-	});
+		try {
+			const raw = fs.readFileSync(filePath, "utf-8");
+			stories.push(parseStoryFile(raw, slug));
+		} catch (error) {
+			console.error(`Skipping malformed story file: ${filePath}`, error);
+		}
+	}
+	return stories;
 }
 
 export function getStoryBySlug(slug: string, dir: string = STORIES_DIR): Story | null {

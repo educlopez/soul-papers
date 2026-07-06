@@ -2,6 +2,7 @@
   "name": "soul-papers",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.5.3",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +11,9 @@
     "lint:fix": "biome check --fix .",
     "format": "biome format --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ingest:list": "tsx scripts/ingest-tally.ts list",
+    "ingest:write": "tsx scripts/ingest-tally.ts write"
   },
   "dependencies": {
     "@types/three": "^0.183.1",
@@ -31,6 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5",
     "vitest": "^4.1.0"
   }

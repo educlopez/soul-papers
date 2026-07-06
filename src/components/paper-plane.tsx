@@ -30,6 +30,7 @@ interface PaperPlaneProps {
 export function PaperPlane({ config, interactive, reducedMotion, onClick }: PaperPlaneProps) {
 	const planeRef = useRef<HTMLDivElement>(null);
 	const tweenRef = useRef<gsap.core.Tween | null>(null);
+	const wobbleRef = useRef<gsap.core.Tween | null>(null);
 
 	useEffect(() => {
 		const el = planeRef.current;
@@ -65,8 +66,25 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 			ease: "none",
 		});
 
+		// Subtle banking wobble on the plane itself, independent of path autoRotate
+		const svg = el.querySelector("svg");
+		if (svg) {
+			wobbleRef.current = gsap.fromTo(
+				svg,
+				{ rotation: -5 },
+				{
+					rotation: 5,
+					duration: 1.2 + Math.random() * 0.8,
+					yoyo: true,
+					repeat: -1,
+					ease: "sine.inOut",
+				},
+			);
+		}
+
 		return () => {
 			tweenRef.current?.kill();
+			wobbleRef.current?.kill();
 		};
 	}, [config, reducedMotion]);
 
@@ -104,36 +122,20 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 			aria-label={interactive ? "Paper plane — click to read a story" : undefined}
 			aria-hidden={!interactive}
 		>
-			{/* Inline SVG for the paper plane */}
+			{/* Paper dart seen from above, pre-rotated so the nose faces right (0°) for motionPath autoRotate */}
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 64 64"
+				viewBox="0 0 115 76"
 				fill="none"
-				className="h-12 w-12 md:h-10 md:w-10 drop-shadow-md"
+				className="w-12 md:w-10 h-auto drop-shadow-md"
 				aria-hidden="true"
 			>
-				<path
-					d="M4 32L28 28L60 4L36 36L28 28"
-					fill="#F5F0E8"
-					stroke="#D4C5A9"
-					strokeWidth="1.5"
-					strokeLinejoin="round"
-				/>
-				<path
-					d="M28 28L60 4L36 36"
-					fill="#EDE6D6"
-					stroke="#D4C5A9"
-					strokeWidth="1"
-					strokeLinejoin="round"
-				/>
-				<path
-					d="M28 28L36 36L24 56L28 28"
-					fill="#E8E0D0"
-					stroke="#D4C5A9"
-					strokeWidth="1.5"
-					strokeLinejoin="round"
-				/>
-				<path d="M28 28L32 44" stroke="#D4C5A9" strokeWidth="0.75" opacity="0.5" />
+				<g transform="translate(0 76) rotate(-90)">
+					<path d="M37.8242 115L75.6468 0H47.2793L37.8242 115Z" fill="#F5F0E8" />
+					<path d="M37.8223 115L-0.000293732 0H28.3672L37.8223 115Z" fill="#EFE8D9" />
+					<path d="M37.8223 115V10L28.3672 0L37.8223 115Z" fill="#E8E0D0" />
+					<path d="M37.8232 115V10L47.2783 0L37.8232 115Z" fill="#D4C5A9" />
+				</g>
 			</svg>
 		</div>
 	);

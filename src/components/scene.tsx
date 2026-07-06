@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchCount, recordRead } from "@/lib/read-counter";
 import { hasReadToday, markTodayRead } from "@/lib/reading-state";
 import type { Story } from "@/lib/types";
 import { AudioControls } from "./audio-controls";
@@ -23,6 +24,7 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 	const [isInteractive, setIsInteractive] = useState(true);
 	const [showNudge, setShowNudge] = useState(false);
 	const [showIntro, setShowIntro] = useState(true);
+	const [readCount, setReadCount] = useState<number | null>(null);
 	const revealRef = useRef<RevealMaskHandle>(null);
 
 	// Reconcile reading state on mount (avoids SSR crash from accessing localStorage)
@@ -30,6 +32,7 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 		if (todaysLetter && hasReadToday(todaysLetter.slug)) {
 			setIsInteractive(false);
 			setShowNudge(true);
+			fetchCount(todaysLetter.slug).then(setReadCount);
 		}
 	}, [todaysLetter]);
 
@@ -49,6 +52,8 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 	const handleLetterClose = useCallback(() => {
 		if (todaysLetter) {
 			markTodayRead(todaysLetter.slug);
+			recordRead(todaysLetter.slug);
+			fetchCount(todaysLetter.slug).then(setReadCount);
 		}
 		setOpenStory(null);
 		setIsInteractive(false);
@@ -85,7 +90,9 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 			{openStory && <PaperLetter story={openStory} onClose={handleLetterClose} />}
 
 			{/* Layer 6: Consequence nudge — shown once today's letter has been read */}
-			{showNudge && !openStory && !showIntro && <ConsequenceNudge story={todaysLetter} />}
+			{showNudge && !openStory && !showIntro && (
+				<ConsequenceNudge story={todaysLetter} count={readCount} />
+			)}
 
 			{/* Audio controls */}
 			<AudioControls enabled={!openStory && !showIntro} />

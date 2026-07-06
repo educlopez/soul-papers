@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	_resetForTesting,
-	canReadMore,
-	getReadingState,
-	getReadToday,
-	markAsRead,
-	recycleIfNeeded,
-	resetIfNewDay,
+	getArchiveHistory,
+	hasReadToday,
+	markArchiveRead,
+	markTodayRead,
 } from "@/lib/reading-state";
+import { getMadridDay } from "@/lib/time";
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -26,11 +25,6 @@ const localStorageMock = (() => {
 	};
 })();
 
-function todayUTC(): string {
-	const now = new Date();
-	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}`;
-}
-
 describe("reading-state", () => {
 	beforeEach(() => {
 		localStorageMock.clear();
@@ -42,139 +36,79 @@ describe("reading-state", () => {
 		vi.unstubAllGlobals();
 	});
 
-	describe("getReadingState", () => {
-		it("returns empty state when localStorage is empty", () => {
-			const state = getReadingState();
-			expect(state.date).toBe(todayUTC());
-			expect(state.slugs).toEqual([]);
+	describe("hasReadToday", () => {
+		it("returns false on first-ever visit (no prior localStorage entry)", () => {
+			expect(hasReadToday("today-letter")).toBe(false);
 		});
 
-		it("returns stored state when localStorage has data for today", () => {
-			const today = todayUTC();
+		it("returns true after markTodayRead for that slug", () => {
+			markTodayRead("today-letter");
+			expect(hasReadToday("today-letter")).toBe(true);
+		});
+
+		it("returns false for a different slug than the one marked read", () => {
+			markTodayRead("today-letter");
+			expect(hasReadToday("some-other-letter")).toBe(false);
+		});
+
+		it("resets to false when the stored Madrid day differs from today", () => {
+			localStorageMock.setItem(
+				"hpv_reading_state",
+				JSON.stringify({ v: 2, date: "2020-01-01", today: "old-letter" }),
+			);
+			expect(hasReadToday("old-letter")).toBe(false);
+		});
+
+		it("discards any non-v2 stored blob (pre-migration demo data)", () => {
 			localStorageMock.setItem(
 				"hpv_read_today",
-				JSON.stringify({ date: today, slugs: ["test-story"] }),
+				JSON.stringify({ date: getMadridDay(), slugs: ["demo-story"] }),
 			);
-			const state = getReadingState();
-			expect(state.date).toBe(today);
-			expect(state.slugs).toEqual(["test-story"]);
-		});
-
-		it("resets state when localStorage has data for a different day", () => {
 			localStorageMock.setItem(
-				"hpv_read_today",
-				JSON.stringify({ date: "2020-01-01", slugs: ["old-story"] }),
+				"hpv_reading_state",
+				JSON.stringify({ date: getMadridDay(), slugs: ["demo-story"] }), // no v:2
 			);
-			const state = getReadingState();
-			expect(state.date).toBe(todayUTC());
-			expect(state.slugs).toEqual([]);
+			expect(hasReadToday("demo-story")).toBe(false);
 		});
 	});
 
-	describe("markAsRead", () => {
-		it("adds slug to today's reads", () => {
-			markAsRead("test-story");
-			const state = getReadingState();
-			expect(state.slugs).toContain("test-story");
+	describe("markTodayRead", () => {
+		it("persists across calls to hasReadToday within the same Madrid day", () => {
+			markTodayRead("letter-a");
+			expect(hasReadToday("letter-a")).toBe(true);
+			expect(hasReadToday("letter-a")).toBe(true);
 		});
 
-		it("adds to history", () => {
-			markAsRead("test-story");
-			const history = JSON.parse(localStorageMock.getItem("hpv_read_history") ?? "[]");
-			expect(history).toContain("test-story");
-		});
-
-		it("does not duplicate slugs in today's reads", () => {
-			markAsRead("test-story");
-			markAsRead("test-story");
-			const state = getReadingState();
-			expect(state.slugs.filter((s: string) => s === "test-story")).toHaveLength(1);
+		it("overwrites the previously marked slug if called again with a different one", () => {
+			markTodayRead("letter-a");
+			markTodayRead("letter-b");
+			expect(hasReadToday("letter-a")).toBe(false);
+			expect(hasReadToday("letter-b")).toBe(true);
 		});
 	});
 
-	describe("canReadMore", () => {
-		it("returns true when no stories read today", () => {
-			expect(canReadMore()).toBe(true);
+	describe("archive reads are exempt from the daily ritual state", () => {
+		it("markArchiveRead does not affect hasReadToday for the ritual letter", () => {
+			expect(hasReadToday("todays-letter")).toBe(false);
+			markArchiveRead("some-past-letter");
+			expect(hasReadToday("todays-letter")).toBe(false);
 		});
 
-		it("returns true when 1 story read today", () => {
-			markAsRead("story-1");
-			expect(canReadMore()).toBe(true);
+		it("getArchiveHistory records archive reads", () => {
+			markArchiveRead("past-one");
+			markArchiveRead("past-two");
+			expect(getArchiveHistory()).toEqual(["past-one", "past-two"]);
 		});
 
-		it("returns false when 2 stories read today", () => {
-			markAsRead("story-1");
-			markAsRead("story-2");
-			expect(canReadMore()).toBe(false);
-		});
-	});
-
-	describe("getReadToday", () => {
-		it("returns empty array initially", () => {
-			expect(getReadToday()).toEqual([]);
-		});
-
-		it("returns slugs read today", () => {
-			markAsRead("story-1");
-			markAsRead("story-2");
-			expect(getReadToday()).toEqual(["story-1", "story-2"]);
+		it("does not duplicate slugs in archive history", () => {
+			markArchiveRead("past-one");
+			markArchiveRead("past-one");
+			expect(getArchiveHistory()).toEqual(["past-one"]);
 		});
 	});
 
-	describe("resetIfNewDay", () => {
-		it("resets when date has changed", () => {
-			localStorageMock.setItem(
-				"hpv_read_today",
-				JSON.stringify({ date: "2020-01-01", slugs: ["old"] }),
-			);
-			resetIfNewDay();
-			const state = getReadingState();
-			expect(state.slugs).toEqual([]);
-			expect(state.date).toBe(todayUTC());
-		});
-
-		it("does not reset when date is current", () => {
-			markAsRead("today-story");
-			resetIfNewDay();
-			const state = getReadingState();
-			expect(state.slugs).toContain("today-story");
-		});
-	});
-
-	describe("recycleIfNeeded", () => {
-		it("resets history when all stories have been read", () => {
-			const allSlugs = ["story-a", "story-b", "story-c"];
-			markAsRead("story-a");
-			markAsRead("story-b");
-			markAsRead("story-c");
-			const historyBefore = JSON.parse(localStorageMock.getItem("hpv_read_history") ?? "[]");
-			expect(historyBefore).toEqual(["story-a", "story-b", "story-c"]);
-
-			recycleIfNeeded(allSlugs);
-			const historyAfter = JSON.parse(localStorageMock.getItem("hpv_read_history") ?? "[]");
-			expect(historyAfter).toEqual([]);
-		});
-
-		it("does not reset history when some stories are unread", () => {
-			const allSlugs = ["story-a", "story-b", "story-c"];
-			markAsRead("story-a");
-			markAsRead("story-b");
-
-			recycleIfNeeded(allSlugs);
-			const history = JSON.parse(localStorageMock.getItem("hpv_read_history") ?? "[]");
-			expect(history).toEqual(["story-a", "story-b"]);
-		});
-
-		it("does nothing for empty allSlugs", () => {
-			markAsRead("story-a");
-			recycleIfNeeded([]);
-			const history = JSON.parse(localStorageMock.getItem("hpv_read_history") ?? "[]");
-			expect(history).toEqual(["story-a"]);
-		});
-	});
-
-	describe("in-memory fallback", () => {
-		it("works when localStorage throws", () => {
+	describe("in-memory fallback (localStorage unavailable)", () => {
+		it("falls back to in-memory state without throwing", () => {
 			vi.stubGlobal("localStorage", {
 				getItem: () => {
 					throw new Error("SecurityError");
@@ -187,13 +121,12 @@ describe("reading-state", () => {
 				},
 			});
 
-			// Should not throw — falls back to in-memory
-			expect(canReadMore()).toBe(true);
-			markAsRead("story-1");
-			expect(getReadToday()).toContain("story-1");
-			expect(canReadMore()).toBe(true);
-			markAsRead("story-2");
-			expect(canReadMore()).toBe(false);
+			expect(() => hasReadToday("story-1")).not.toThrow();
+			expect(hasReadToday("story-1")).toBe(false);
+			expect(() => markTodayRead("story-1")).not.toThrow();
+			expect(hasReadToday("story-1")).toBe(true);
+			expect(() => markArchiveRead("story-2")).not.toThrow();
+			expect(getArchiveHistory()).toContain("story-2");
 		});
 	});
 });

@@ -13,6 +13,8 @@ export function parseStoryFile(raw: string, slug: string): Story {
 		date: data.date,
 		tags: data.tags ?? [],
 		slug,
+		nudge: data.nudge,
+		tallyId: data.tallyId,
 		content: content.trim(),
 	};
 }

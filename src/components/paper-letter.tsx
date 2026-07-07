@@ -2,7 +2,8 @@
 
 import { gsap } from "gsap";
 import { useCallback, useEffect, useRef } from "react";
-import { playSfx } from "./audio-controls";
+// Audio disabled for now — no tracks shipped yet. Re-enable alongside AudioControls in scene.tsx.
+// import { playSfx } from "./audio-controls";
 import { StoryContent } from "./story-content";
 
 interface PaperLetterProps {
@@ -31,7 +32,7 @@ export function PaperLetter({ story, onClose }: PaperLetterProps) {
 		const foldTop = foldTopRef.current;
 		if (!el || !overlay) return;
 
-		playSfx("/audio/paper-unfold.mp3");
+		// playSfx("/audio/paper-unfold.mp3");
 
 		if (reducedMotion.current) {
 			gsap.set(el, { opacity: 1, scale: 1, rotateX: 0 });
@@ -93,7 +94,7 @@ export function PaperLetter({ story, onClose }: PaperLetterProps) {
 			return;
 		}
 
-		playSfx("/audio/paper-close.mp3");
+		// playSfx("/audio/paper-close.mp3");
 
 		if (reducedMotion.current) {
 			onClose();

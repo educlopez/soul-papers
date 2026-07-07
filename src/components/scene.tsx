@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchCount, recordRead } from "@/lib/read-counter";
 import { hasReadToday, markTodayRead } from "@/lib/reading-state";
 import type { Story } from "@/lib/types";
-import { AudioControls } from "./audio-controls";
+// Audio disabled for now — no tracks shipped yet. Re-enable alongside playSfx in paper-letter.tsx.
+// import { AudioControls } from "./audio-controls";
 import { ConsequenceNudge } from "./consequence-nudge";
 import { IntroOverlay } from "./intro-overlay";
 import { PaperLetter } from "./paper-letter";
@@ -94,8 +95,8 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 				<ConsequenceNudge story={todaysLetter} count={readCount} />
 			)}
 
-			{/* Audio controls */}
-			<AudioControls enabled={!openStory && !showIntro} />
+			{/* Audio controls — disabled until real tracks ship */}
+			{/* <AudioControls enabled={!openStory && !showIntro} /> */}
 
 			{/* Subtle About link */}
 			<a

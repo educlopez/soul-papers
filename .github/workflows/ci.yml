@@ -1,0 +1,89 @@
+# Mirrors the shared gates in educlopez/github-actions-workflows.
+#
+# This repo is public and that one is private, and GitHub does not let a public
+# repo call a reusable workflow from a private repo — the run fails before any
+# job starts. So the steps live here. Keep them in sync with the shared repo.
+
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint & format
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Enable Corepack
+        run: corepack enable
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: 📦 Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: 🧹 Run lint
+        run: pnpm lint
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Enable Corepack
+        run: corepack enable
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: 📦 Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: 🔎 Run type check
+        run: pnpm typecheck
+
+  tests:
+    name: Test suite
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Enable Corepack
+        run: corepack enable
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: 📦 Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: 🧪 Run tests
+        run: pnpm test

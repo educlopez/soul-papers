@@ -2,7 +2,9 @@ import { getMadridDay, getMadridDayIndex } from "./time";
 import type { Story } from "./types";
 
 function byDateThenSlugAsc(a: Story, b: Story): number {
-	if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+	if (a.date !== b.date) {
+		return a.date < b.date ? -1 : 1;
+	}
 	return a.slug.localeCompare(b.slug);
 }
 
@@ -24,7 +26,9 @@ function eligiblePool(stories: Story[], today: string): Story[] {
 export function resolveTodaysLetter(stories: Story[], now: Date = new Date()): Story | null {
 	const today = getMadridDay(now);
 	const eligible = eligiblePool(stories, today);
-	if (eligible.length === 0) return null;
+	if (eligible.length === 0) {
+		return null;
+	}
 
 	const exactMatches = eligible.filter((s) => s.date === today);
 	if (exactMatches.length > 0) {
@@ -46,5 +50,10 @@ export function getArchiveLetters(stories: Story[], now: Date = new Date()): Sto
 	const todaysLetter = resolveTodaysLetter(stories, now);
 	return eligiblePool(stories, today)
 		.filter((s) => s.slug !== todaysLetter?.slug)
-		.sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
+		.sort((a, b) => {
+			if (a.date === b.date) {
+				return 0;
+			}
+			return a.date < b.date ? 1 : -1;
+		});
 }

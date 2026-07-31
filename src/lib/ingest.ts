@@ -21,27 +21,27 @@ export interface TallySubmission {
 }
 
 export interface ParsedLetter {
-	tallyId: string;
-	content: string;
 	author: string;
+	content: string;
+	tallyId: string;
 	/** Undefined when the optional "Title" field was left blank. */
 	title?: string;
 }
 
 export interface IngestContext {
-	existingSlugs: ReadonlySet<string> | Iterable<string>;
 	existingDates: ReadonlySet<string> | Iterable<string>;
+	existingSlugs: ReadonlySet<string> | Iterable<string>;
 	now?: Date;
 }
 
 export interface LetterDraft {
-	tallyId: string;
-	slug: string;
-	title: string;
 	author: string;
+	branch: string;
 	date: string;
 	mdx: string;
-	branch: string;
+	slug: string;
+	tallyId: string;
+	title: string;
 }
 
 /** Lowercases, strips diacritics, and collapses anything that isn't
@@ -61,17 +61,23 @@ export function slugify(input: string): string {
 export function generateSlug(
 	base: string,
 	existingSlugs: ReadonlySet<string> | Iterable<string>,
-	disambiguator: string,
+	disambiguator: string
 ): string {
 	const existing = existingSlugs instanceof Set ? existingSlugs : new Set(existingSlugs);
 	const baseSlug = slugify(base) || "letter";
-	if (!existing.has(baseSlug)) return baseSlug;
+	if (!existing.has(baseSlug)) {
+		return baseSlug;
+	}
 
 	const disambiguated = `${baseSlug}-${slugify(disambiguator)}`;
-	if (!existing.has(disambiguated)) return disambiguated;
+	if (!existing.has(disambiguated)) {
+		return disambiguated;
+	}
 
 	let suffix = 2;
-	while (existing.has(`${disambiguated}-${suffix}`)) suffix++;
+	while (existing.has(`${disambiguated}-${suffix}`)) {
+		suffix++;
+	}
 	return `${disambiguated}-${suffix}`;
 }
 
@@ -87,11 +93,13 @@ function addDays(dateStr: string, days: number): string {
  * resolver. Skips any date already used by another letter. */
 export function computeNextAvailableDate(
 	existingDates: ReadonlySet<string> | Iterable<string>,
-	now: Date = new Date(),
+	now: Date = new Date()
 ): string {
 	const existing = existingDates instanceof Set ? existingDates : new Set(existingDates);
 	let candidate = addDays(getMadridDay(now), 1);
-	while (existing.has(candidate)) candidate = addDays(candidate, 1);
+	while (existing.has(candidate)) {
+		candidate = addDays(candidate, 1);
+	}
 	return candidate;
 }
 
@@ -139,24 +147,42 @@ function findQuestion(questions: TallyQuestion[], keywords: string[]): TallyQues
 }
 
 function answerText(submission: TallySubmission, question: TallyQuestion | undefined): string {
-	if (!question) return "";
+	if (!question) {
+		return "";
+	}
 	const response = submission.responses.find((r) => r.questionId === question.id);
-	if (!response) return "";
+	if (!response) {
+		return "";
+	}
 	const { value } = response;
-	if (typeof value === "string") return value.trim();
-	if (Array.isArray(value) && typeof value[0] === "string") return value[0].trim();
+	if (typeof value === "string") {
+		return value.trim();
+	}
+	if (Array.isArray(value) && typeof value[0] === "string") {
+		return value[0].trim();
+	}
 	return "";
 }
 
 function isConsented(submission: TallySubmission, questions: TallyQuestion[]): boolean {
 	const question = findQuestion(questions, ["consent"]);
-	if (!question) return false;
+	if (!question) {
+		return false;
+	}
 	const response = submission.responses.find((r) => r.questionId === question.id);
-	if (!response) return false;
+	if (!response) {
+		return false;
+	}
 	const { value } = response;
-	if (typeof value === "boolean") return value;
-	if (Array.isArray(value)) return value.length > 0;
-	if (typeof value === "string") return value.trim().length > 0;
+	if (typeof value === "boolean") {
+		return value;
+	}
+	if (Array.isArray(value)) {
+		return value.length > 0;
+	}
+	if (typeof value === "string") {
+		return value.trim().length > 0;
+	}
 	return false;
 }
 
@@ -166,24 +192,30 @@ function isConsented(submission: TallySubmission, questions: TallyQuestion[]): b
  * submission rather than assuming consent. */
 export function parseTallySubmission(
 	submission: TallySubmission,
-	questions: TallyQuestion[],
+	questions: TallyQuestion[]
 ): ParsedLetter | null {
-	if (submission.isCompleted === false) return null;
-	if (!isConsented(submission, questions)) return null;
+	if (submission.isCompleted === false) {
+		return null;
+	}
+	if (!isConsented(submission, questions)) {
+		return null;
+	}
 
 	const content = answerText(submission, findQuestion(questions, ["letter", "carta"]));
 	const author = answerText(submission, findQuestion(questions, ["signature", "persona", "firma"]));
-	if (!content || !author) return null;
+	if (!(content && author)) {
+		return null;
+	}
 
 	const title = answerText(submission, findQuestion(questions, ["title", "título", "titulo"]));
-	return { tallyId: submission.id, content, author, title: title || undefined };
+	return { author, content, tallyId: submission.id, title: title || undefined };
 }
 
 /** Dedup filter: excludes submissions whose id already exists as a merged
  * letter's `tallyId` OR an open `letter/tally-{id}` PR branch. */
 export function filterUnprocessedSubmissions(
 	submissions: TallySubmission[],
-	excludeTallyIds: ReadonlySet<string> | Iterable<string>,
+	excludeTallyIds: ReadonlySet<string> | Iterable<string>
 ): TallySubmission[] {
 	const exclude = excludeTallyIds instanceof Set ? excludeTallyIds : new Set(excludeTallyIds);
 	return submissions.filter((s) => !exclude.has(s.id));
@@ -203,19 +235,19 @@ export function createLetterDraft(parsed: ParsedLetter, context: IngestContext):
 	const slug = generateSlug(slugBase, context.existingSlugs, parsed.tallyId);
 	const date = computeNextAvailableDate(context.existingDates, context.now);
 	const mdx = buildLetterMdx({
-		title,
 		author: parsed.author,
+		content: parsed.content,
 		date,
 		tallyId: parsed.tallyId,
-		content: parsed.content,
+		title,
 	});
 	return {
-		tallyId: parsed.tallyId,
-		slug,
-		title,
 		author: parsed.author,
+		branch: branchNameForTallyId(parsed.tallyId),
 		date,
 		mdx,
-		branch: branchNameForTallyId(parsed.tallyId),
+		slug,
+		tallyId: parsed.tallyId,
+		title,
 	};
 }

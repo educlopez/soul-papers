@@ -7,7 +7,7 @@ export function CloseButton({ onClick }: CloseButtonProps) {
 		<button
 			type="button"
 			onClick={onClick}
-			className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors"
+			className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-700"
 			aria-label="Close story"
 		>
 			<svg

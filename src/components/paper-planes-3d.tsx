@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 interface PaperPlanes3DProps {
+	count?: number;
 	interactive: boolean;
 	onPlaneClick: () => void;
-	count?: number;
 }
 
 /**
@@ -18,18 +18,18 @@ function createPlaneModel(): THREE.Group {
 	const group = new THREE.Group();
 
 	const wingMat = new THREE.MeshPhongMaterial({
-		color: 0xf5f0e8,
+		color: 0xf5_f0_e8,
 		flatShading: true,
+		opacity: 0.95,
 		side: THREE.DoubleSide,
 		transparent: true,
-		opacity: 0.95,
 	});
 	const keelMat = new THREE.MeshPhongMaterial({
-		color: 0xd4c5a9,
+		color: 0xd4_c5_a9,
 		flatShading: true,
+		opacity: 0.95,
 		side: THREE.DoubleSide,
 		transparent: true,
-		opacity: 0.95,
 	});
 
 	// Shared vertices (unit-ish dart, ~1.1 long, ~1.0 wingspan)
@@ -43,13 +43,10 @@ function createPlaneModel(): THREE.Group {
 		a: [number, number, number],
 		b: [number, number, number],
 		c: [number, number, number],
-		material: THREE.Material,
+		material: THREE.Material
 	) => {
 		const geo = new THREE.BufferGeometry();
-		geo.setAttribute(
-			"position",
-			new THREE.Float32BufferAttribute([...a, ...b, ...c], 3),
-		);
+		geo.setAttribute("position", new THREE.Float32BufferAttribute([...a, ...b, ...c], 3));
 		geo.computeVertexNormals();
 		return new THREE.Mesh(geo, material);
 	};
@@ -65,7 +62,7 @@ function createPlaneModel(): THREE.Group {
 	// makes planes nearly impossible to click while they move
 	const hitArea = new THREE.Mesh(
 		new THREE.SphereGeometry(0.9),
-		new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+		new THREE.MeshBasicMaterial({ depthWrite: false, opacity: 0, transparent: true })
 	);
 	group.add(hitArea);
 
@@ -80,19 +77,19 @@ function createPlaneModel(): THREE.Group {
 class Boid {
 	position: THREE.Vector3;
 	velocity: THREE.Vector3;
-	private acceleration: THREE.Vector3;
-	private worldSize: THREE.Vector3;
+	private readonly acceleration: THREE.Vector3;
+	private readonly worldSize: THREE.Vector3;
 
 	constructor(worldX: number, worldY: number, worldZ: number) {
 		this.position = new THREE.Vector3(
 			(Math.random() - 0.5) * worldX * 1.5,
 			(Math.random() - 0.5) * worldY,
-			(Math.random() - 0.5) * worldZ,
+			(Math.random() - 0.5) * worldZ
 		);
 		this.velocity = new THREE.Vector3(
 			(Math.random() - 0.5) * 0.007,
 			(Math.random() - 0.5) * 0.003,
-			(Math.random() - 0.5) * 0.005,
+			(Math.random() - 0.5) * 0.005
 		);
 		this.acceleration = new THREE.Vector3();
 		this.worldSize = new THREE.Vector3(worldX, worldY, worldZ);
@@ -111,9 +108,13 @@ class Boid {
 		let neighbors = 0;
 
 		for (const other of boids) {
-			if (other === this) continue;
+			if (other === this) {
+				continue;
+			}
 			const dist = this.position.distanceTo(other.position);
-			if (dist > 2) continue;
+			if (dist > 2) {
+				continue;
+			}
 
 			alignment.add(other.velocity);
 			cohesion.add(other.position);
@@ -140,12 +141,24 @@ class Boid {
 		const p = this.position;
 		const w = this.worldSize;
 
-		if (p.x > w.x - margin) this.acceleration.x -= force;
-		if (p.x < -w.x + margin) this.acceleration.x += force;
-		if (p.y > w.y - margin) this.acceleration.y -= force;
-		if (p.y < -w.y + margin) this.acceleration.y += force;
-		if (p.z > w.z - margin) this.acceleration.z -= force;
-		if (p.z < -w.z + margin) this.acceleration.z += force;
+		if (p.x > w.x - margin) {
+			this.acceleration.x -= force;
+		}
+		if (p.x < -w.x + margin) {
+			this.acceleration.x += force;
+		}
+		if (p.y > w.y - margin) {
+			this.acceleration.y -= force;
+		}
+		if (p.y < -w.y + margin) {
+			this.acceleration.y += force;
+		}
+		if (p.z > w.z - margin) {
+			this.acceleration.z -= force;
+		}
+		if (p.z < -w.z + margin) {
+			this.acceleration.z += force;
+		}
 	}
 
 	private move() {
@@ -153,17 +166,15 @@ class Boid {
 		// Slow max speed for gentle floating
 		const maxSpeed = 0.012;
 		const speed = this.velocity.length();
-		if (speed > maxSpeed) this.velocity.multiplyScalar(maxSpeed / speed);
+		if (speed > maxSpeed) {
+			this.velocity.multiplyScalar(maxSpeed / speed);
+		}
 		this.position.add(this.velocity);
 		this.acceleration.set(0, 0, 0);
 	}
 }
 
-export function PaperPlanes3D({
-	interactive,
-	onPlaneClick,
-	count: countProp,
-}: PaperPlanes3DProps) {
+export function PaperPlanes3D({ interactive, onPlaneClick, count: countProp }: PaperPlanes3DProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const interactiveRef = useRef(interactive);
 	const onClickRef = useRef(onPlaneClick);
@@ -173,15 +184,17 @@ export function PaperPlanes3D({
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
+		if (!canvas) {
+			return;
+		}
 
 		const count = countProp ?? (window.innerWidth < 768 ? 5 : 10);
 
 		// --- Renderer ---
 		const renderer = new THREE.WebGLRenderer({
-			canvas,
 			alpha: true,
 			antialias: true,
+			canvas,
 		});
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		renderer.setSize(window.innerWidth, window.innerHeight);
@@ -193,11 +206,11 @@ export function PaperPlanes3D({
 		camera.position.z = 5;
 
 		// --- Lighting ---
-		scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-		const dirLight = new THREE.DirectionalLight(0xfff8e8, 1.5);
+		scene.add(new THREE.AmbientLight(0xff_ff_ff, 0.85));
+		const dirLight = new THREE.DirectionalLight(0xff_f8_e8, 1.5);
 		dirLight.position.set(3, 4, 5);
 		scene.add(dirLight);
-		const backLight = new THREE.DirectionalLight(0xe8f0ff, 0.5);
+		const backLight = new THREE.DirectionalLight(0xe8_f0_ff, 0.5);
 		backLight.position.set(-2, -1, 3);
 		scene.add(backLight);
 
@@ -235,9 +248,7 @@ export function PaperPlanes3D({
 				const v = boid.velocity;
 				if (v.length() > 0.001) {
 					model.rotation.y = Math.atan2(-v.z, v.x);
-					model.rotation.z = Math.asin(
-						Math.max(-1, Math.min(1, v.y / v.length())),
-					);
+					model.rotation.z = Math.asin(Math.max(-1, Math.min(1, v.y / v.length())));
 				}
 			}
 
@@ -251,15 +262,15 @@ export function PaperPlanes3D({
 		const pointer = new THREE.Vector2();
 
 		const handlePointerDown = (e: PointerEvent) => {
-			if (!interactiveRef.current) return;
+			if (!interactiveRef.current) {
+				return;
+			}
 
 			pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
 			pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
 			raycaster.setFromCamera(pointer, camera);
-			const hits = raycaster.intersectObjects(
-				planeModels.flatMap((m) => m.children),
-			);
+			const hits = raycaster.intersectObjects(planeModels.flatMap((m) => m.children));
 
 			if (hits.length > 0) {
 				e.stopPropagation();
@@ -296,11 +307,7 @@ export function PaperPlanes3D({
 		<canvas
 			ref={canvasRef}
 			className={`fixed inset-0 z-10 ${interactive ? "cursor-pointer" : "cursor-default"}`}
-			aria-label={
-				interactive
-					? "Paper planes — click one to read a story"
-					: undefined
-			}
+			aria-label={interactive ? "Paper planes — click one to read a story" : undefined}
 			aria-hidden={!interactive}
 		/>
 	);

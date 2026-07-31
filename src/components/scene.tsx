@@ -14,10 +14,10 @@ import { RevealMask, type RevealMaskHandle } from "./reveal-mask";
 import { VideoBackground } from "./video-background";
 
 interface SceneProps {
-	/** Today's global ritual letter (Europe/Madrid), resolved server-side. Null when no letter is eligible yet. */
-	todaysLetter: Story | null;
 	/** All stories pre-loaded at build time (used by the archive door / empty-state check). */
 	stories: Story[];
+	/** Today's global ritual letter (Europe/Madrid), resolved server-side. Null when no letter is eligible yet. */
+	todaysLetter: Story | null;
 }
 
 export function Scene({ todaysLetter, stories }: SceneProps) {
@@ -46,7 +46,9 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 	}, []);
 
 	const handlePlaneClick = useCallback(() => {
-		if (!todaysLetter || !isInteractive) return;
+		if (!(todaysLetter && isInteractive)) {
+			return;
+		}
 		setOpenStory(todaysLetter);
 	}, [todaysLetter, isInteractive]);
 
@@ -65,7 +67,7 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 	if (stories.length === 0 || !todaysLetter) {
 		return (
 			<div className="fixed inset-0 flex items-center justify-center bg-amber-50">
-				<p className="text-xl font-serif text-neutral-500 italic">Stories are on their way...</p>
+				<p className="font-serif text-neutral-500 text-xl italic">Stories are on their way...</p>
 			</div>
 		);
 	}
@@ -85,10 +87,10 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 			<RevealMask ref={revealRef} initialProgress={showIntro ? 0 : 1} />
 
 			{/* Layer 4: Intro overlay */}
-			{showIntro && <IntroOverlay onStart={handleStart} />}
+			{showIntro ? <IntroOverlay onStart={handleStart} /> : null}
 
 			{/* Layer 5: Paper letter overlay */}
-			{openStory && <PaperLetter story={openStory} onClose={handleLetterClose} />}
+			{openStory ? <PaperLetter story={openStory} onClose={handleLetterClose} /> : null}
 
 			{/* Layer 6: Consequence nudge — shown once today's letter has been read */}
 			{showNudge && !openStory && !showIntro && (
@@ -101,7 +103,7 @@ export function Scene({ todaysLetter, stories }: SceneProps) {
 			{/* Subtle About link */}
 			<a
 				href="/about"
-				className="fixed bottom-6 left-6 z-50 text-xs text-white/40 hover:text-white/70 transition-colors"
+				className="fixed bottom-6 left-6 z-50 text-white/40 text-xs transition-colors hover:text-white/70"
 			>
 				About
 			</a>

@@ -8,7 +8,7 @@ describe("escapeHtml", () => {
 
 	it("escapes ampersands and quotes without double-escaping", () => {
 		expect(escapeHtml(`Tom & Jerry said "hi" to O'Malley`)).toBe(
-			"Tom &amp; Jerry said &quot;hi&quot; to O&#39;Malley",
+			"Tom &amp; Jerry said &quot;hi&quot; to O&#39;Malley"
 		);
 	});
 

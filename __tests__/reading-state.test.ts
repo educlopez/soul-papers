@@ -12,15 +12,15 @@ import { getMadridDay } from "@/lib/time";
 const localStorageMock = (() => {
 	let store: Record<string, string> = {};
 	return {
-		getItem: (key: string) => store[key] ?? null,
-		setItem: (key: string, value: string) => {
-			store[key] = value;
+		clear: () => {
+			store = {};
 		},
+		getItem: (key: string) => store[key] ?? null,
 		removeItem: (key: string) => {
 			delete store[key];
 		},
-		clear: () => {
-			store = {};
+		setItem: (key: string, value: string) => {
+			store[key] = value;
 		},
 	};
 })();
@@ -54,7 +54,7 @@ describe("reading-state", () => {
 		it("resets to false when the stored Madrid day differs from today", () => {
 			localStorageMock.setItem(
 				"hpv_reading_state",
-				JSON.stringify({ v: 2, date: "2020-01-01", today: "old-letter" }),
+				JSON.stringify({ date: "2020-01-01", today: "old-letter", v: 2 })
 			);
 			expect(hasReadToday("old-letter")).toBe(false);
 		});
@@ -62,11 +62,11 @@ describe("reading-state", () => {
 		it("discards any non-v2 stored blob (pre-migration demo data)", () => {
 			localStorageMock.setItem(
 				"hpv_read_today",
-				JSON.stringify({ date: getMadridDay(), slugs: ["demo-story"] }),
+				JSON.stringify({ date: getMadridDay(), slugs: ["demo-story"] })
 			);
 			localStorageMock.setItem(
 				"hpv_reading_state",
-				JSON.stringify({ date: getMadridDay(), slugs: ["demo-story"] }), // no v:2
+				JSON.stringify({ date: getMadridDay(), slugs: ["demo-story"] }) // no v:2
 			);
 			expect(hasReadToday("demo-story")).toBe(false);
 		});
@@ -113,10 +113,10 @@ describe("reading-state", () => {
 				getItem: () => {
 					throw new Error("SecurityError");
 				},
-				setItem: () => {
+				removeItem: () => {
 					throw new Error("SecurityError");
 				},
-				removeItem: () => {
+				setItem: () => {
 					throw new Error("SecurityError");
 				},
 			});

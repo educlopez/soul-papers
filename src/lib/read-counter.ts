@@ -31,14 +31,16 @@ function saveCountedSet(counted: Set<string>): void {
 export function recordRead(slug: string): void {
 	try {
 		const counted = getCountedSet();
-		if (counted === null || counted.has(slug)) return;
+		if (counted === null || counted.has(slug)) {
+			return;
+		}
 
 		counted.add(slug);
 		saveCountedSet(counted);
 
 		fetch(`/api/letters/${encodeURIComponent(slug)}`, {
-			method: "POST",
 			keepalive: true,
+			method: "POST",
 		}).catch(() => {
 			// Silent degrade — the counter service failing must never surface to the visitor.
 		});
@@ -55,7 +57,9 @@ export function recordRead(slug: string): void {
 export async function fetchCount(slug: string): Promise<number | null> {
 	try {
 		const res = await fetch(`/api/letters/${encodeURIComponent(slug)}`);
-		if (!res.ok) return null;
+		if (!res.ok) {
+			return null;
+		}
 		const data = await res.json();
 		return typeof data.count === "number" ? data.count : null;
 	} catch {

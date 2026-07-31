@@ -8,7 +8,7 @@ const VOLUME_KEY = "hpv_audio_volume";
 function loadPref<T>(key: string, fallback: T): T {
 	try {
 		const raw = localStorage.getItem(key);
-		return raw !== null ? JSON.parse(raw) : fallback;
+		return raw === null ? fallback : JSON.parse(raw);
 	} catch {
 		return fallback;
 	}
@@ -64,7 +64,9 @@ export function AudioControls({
 	// Sync audio state
 	useEffect(() => {
 		const audio = audioRef.current;
-		if (!audio) return;
+		if (!audio) {
+			return;
+		}
 
 		audio.volume = volume;
 		audio.muted = isMuted;
@@ -99,7 +101,7 @@ export function AudioControls({
 	}, []);
 
 	return (
-		<div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+		<div className="fixed right-6 bottom-6 z-50 flex items-center gap-3">
 			<input
 				type="range"
 				min="0"
@@ -107,13 +109,13 @@ export function AudioControls({
 				step="0.05"
 				value={isMuted ? 0 : volume}
 				onChange={handleVolumeChange}
-				className="w-20 accent-amber-200/80 h-1 opacity-60 hover:opacity-100 transition-opacity"
+				className="h-1 w-20 accent-amber-200/80 opacity-60 transition-opacity hover:opacity-100"
 				aria-label="Volume"
 			/>
 			<button
 				type="button"
 				onClick={toggleMute}
-				className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white/80 backdrop-blur-sm hover:bg-black/50 transition-colors"
+				className="flex h-10 w-10 items-center justify-center rounded-full bg-black/30 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50"
 				aria-label={isMuted ? "Unmute audio" : "Mute audio"}
 			>
 				{isMuted ? (

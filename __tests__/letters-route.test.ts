@@ -5,7 +5,7 @@ const get = vi.fn();
 
 vi.mock("@upstash/redis", () => ({
 	Redis: vi.fn().mockImplementation(function MockRedis() {
-		return { incr, get };
+		return { get, incr };
 	}),
 }));
 
@@ -52,9 +52,10 @@ describe("letters route handlers", () => {
 			incr.mockResolvedValueOnce(5);
 			const { POST } = await loadRoute();
 
-			const res = await POST(new Request("http://x/api/letters/foo", { method: "POST" }), makeParams(
-				"a-letter-never-sent",
-			));
+			const res = await POST(
+				new Request("http://x/api/letters/foo", { method: "POST" }),
+				makeParams("a-letter-never-sent")
+			);
 
 			expect(await res.json()).toEqual({ count: 5 });
 			expect(incr).toHaveBeenCalledWith("letter:a-letter-never-sent");
@@ -66,7 +67,7 @@ describe("letters route handlers", () => {
 
 			const res = await POST(
 				new Request("http://x/api/letters/foo", { method: "POST" }),
-				makeParams("a-letter-never-sent"),
+				makeParams("a-letter-never-sent")
 			);
 
 			expect(await res.json()).toEqual({ count: null });
@@ -77,7 +78,7 @@ describe("letters route handlers", () => {
 
 			const res = await POST(
 				new Request("http://x/api/letters/foo", { method: "POST" }),
-				makeParams("../etc/passwd"),
+				makeParams("../etc/passwd")
 			);
 
 			expect(await res.json()).toEqual({ count: null });
@@ -90,7 +91,7 @@ describe("letters route handlers", () => {
 
 			const res = await POST(
 				new Request("http://x/api/letters/foo", { method: "POST" }),
-				makeParams("a-letter-never-sent"),
+				makeParams("a-letter-never-sent")
 			);
 
 			expect(await res.json()).toEqual({ count: null });
@@ -105,7 +106,7 @@ describe("letters route handlers", () => {
 
 			const res = await GET(
 				new Request("http://x/api/letters/foo"),
-				makeParams("a-letter-never-sent"),
+				makeParams("a-letter-never-sent")
 			);
 
 			expect(await res.json()).toEqual({ count: 9 });
@@ -118,7 +119,7 @@ describe("letters route handlers", () => {
 
 			const res = await GET(
 				new Request("http://x/api/letters/foo"),
-				makeParams("a-letter-never-sent"),
+				makeParams("a-letter-never-sent")
 			);
 
 			expect(await res.json()).toEqual({ count: null });
@@ -130,7 +131,7 @@ describe("letters route handlers", () => {
 
 			const res = await GET(
 				new Request("http://x/api/letters/foo"),
-				makeParams("a-letter-never-sent"),
+				makeParams("a-letter-never-sent")
 			);
 
 			expect(await res.json()).toEqual({ count: null });

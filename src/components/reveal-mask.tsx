@@ -1,13 +1,7 @@
 "use client";
 
 import { gsap } from "gsap";
-import {
-	forwardRef,
-	useCallback,
-	useEffect,
-	useImperativeHandle,
-	useRef,
-} from "react";
+import { type RefObject, useEffect, useImperativeHandle, useRef } from "react";
 import * as THREE from "three";
 
 export interface RevealMaskHandle {
@@ -122,124 +116,118 @@ void main() {
  * WebGL-powered reveal mask overlay.
  * Renders a paper-colored overlay that dissolves with organic Perlin noise edges.
  */
-export const RevealMask = forwardRef<RevealMaskHandle, RevealMaskProps>(
-	function RevealMask({ initialProgress = 0 }, ref) {
-		const canvasRef = useRef<HTMLCanvasElement>(null);
-		const uniformsRef = useRef<{
-			uProgress: THREE.Uniform<number>;
-			uTime: THREE.Uniform<number>;
-			uResolution: THREE.Uniform<THREE.Vector2>;
-		} | null>(null);
-		const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-		const frameRef = useRef<number>(0);
-		const sceneRef = useRef<THREE.Scene | null>(null);
-		const cameraRef = useRef<THREE.Camera | null>(null);
+export const RevealMask = function RevealMask({
+	initialProgress = 0,
+	ref,
+}: RevealMaskProps & { ref?: RefObject<RevealMaskHandle | null> }) {
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const uniformsRef = useRef<{
+		uProgress: THREE.Uniform<number>;
+		uTime: THREE.Uniform<number>;
+		uResolution: THREE.Uniform<THREE.Vector2>;
+	} | null>(null);
+	const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+	const frameRef = useRef<number>(0);
+	const sceneRef = useRef<THREE.Scene | null>(null);
+	const cameraRef = useRef<THREE.Camera | null>(null);
 
-		useEffect(() => {
-			const canvas = canvasRef.current;
-			if (!canvas) return;
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas) {
+			return;
+		}
 
-			const renderer = new THREE.WebGLRenderer({
-				canvas,
-				alpha: true,
-				premultipliedAlpha: false,
-			});
-			renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		const renderer = new THREE.WebGLRenderer({
+			alpha: true,
+			canvas,
+			premultipliedAlpha: false,
+		});
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		rendererRef.current = renderer;
+
+		const scene = new THREE.Scene();
+		sceneRef.current = scene;
+
+		// Fullscreen camera
+		const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+		cameraRef.current = camera;
+
+		const uniforms = {
+			uProgress: new THREE.Uniform(initialProgress),
+			uResolution: new THREE.Uniform(
+				new THREE.Vector2(
+					window.innerWidth * Math.min(window.devicePixelRatio, 2),
+					window.innerHeight * Math.min(window.devicePixelRatio, 2)
+				)
+			),
+			uTime: new THREE.Uniform(0),
+		};
+		uniformsRef.current = uniforms;
+
+		const material = new THREE.ShaderMaterial({
+			fragmentShader,
+			transparent: true,
+			uniforms,
+			vertexShader,
+		});
+
+		// Fullscreen quad
+		const geometry = new THREE.PlaneGeometry(2, 2);
+		const mesh = new THREE.Mesh(geometry, material);
+		scene.add(mesh);
+
+		// Render loop
+		const clock = new THREE.Clock();
+		const animate = () => {
+			uniforms.uTime.value = clock.getElapsedTime();
+			renderer.render(scene, camera);
+			frameRef.current = requestAnimationFrame(animate);
+		};
+		animate();
+
+		// Handle resize
+		const onResize = () => {
+			const dpr = Math.min(window.devicePixelRatio, 2);
 			renderer.setSize(window.innerWidth, window.innerHeight);
-			rendererRef.current = renderer;
+			uniforms.uResolution.value.set(window.innerWidth * dpr, window.innerHeight * dpr);
+		};
+		window.addEventListener("resize", onResize);
 
-			const scene = new THREE.Scene();
-			sceneRef.current = scene;
+		return () => {
+			cancelAnimationFrame(frameRef.current);
+			window.removeEventListener("resize", onResize);
+			renderer.dispose();
+			geometry.dispose();
+			material.dispose();
+		};
+	}, [initialProgress]);
 
-			// Fullscreen camera
-			const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-			cameraRef.current = camera;
+	useImperativeHandle(
+		ref,
+		() => ({
+			reveal: () =>
+				new Promise<void>((resolve) => {
+					if (!uniformsRef.current) {
+						resolve();
+						return;
+					}
+					const proxy = { progress: uniformsRef.current.uProgress.value };
+					gsap.to(proxy, {
+						duration: 2.5,
+						ease: "power2.inOut",
+						onComplete: resolve,
+						onUpdate: () => {
+							if (uniformsRef.current) {
+								uniformsRef.current.uProgress.value = proxy.progress;
+							}
+						},
+						progress: 1,
+					});
+				}),
+		}),
+		[]
+	);
 
-			const uniforms = {
-				uProgress: new THREE.Uniform(initialProgress),
-				uTime: new THREE.Uniform(0),
-				uResolution: new THREE.Uniform(
-					new THREE.Vector2(
-						window.innerWidth * Math.min(window.devicePixelRatio, 2),
-						window.innerHeight * Math.min(window.devicePixelRatio, 2),
-					),
-				),
-			};
-			uniformsRef.current = uniforms;
-
-			const material = new THREE.ShaderMaterial({
-				vertexShader,
-				fragmentShader,
-				uniforms,
-				transparent: true,
-			});
-
-			// Fullscreen quad
-			const geometry = new THREE.PlaneGeometry(2, 2);
-			const mesh = new THREE.Mesh(geometry, material);
-			scene.add(mesh);
-
-			// Render loop
-			const clock = new THREE.Clock();
-			const animate = () => {
-				uniforms.uTime.value = clock.getElapsedTime();
-				renderer.render(scene, camera);
-				frameRef.current = requestAnimationFrame(animate);
-			};
-			animate();
-
-			// Handle resize
-			const onResize = () => {
-				const dpr = Math.min(window.devicePixelRatio, 2);
-				renderer.setSize(window.innerWidth, window.innerHeight);
-				uniforms.uResolution.value.set(
-					window.innerWidth * dpr,
-					window.innerHeight * dpr,
-				);
-			};
-			window.addEventListener("resize", onResize);
-
-			return () => {
-				cancelAnimationFrame(frameRef.current);
-				window.removeEventListener("resize", onResize);
-				renderer.dispose();
-				geometry.dispose();
-				material.dispose();
-			};
-		}, [initialProgress]);
-
-		useImperativeHandle(
-			ref,
-			() => ({
-				reveal: () =>
-					new Promise<void>((resolve) => {
-						if (!uniformsRef.current) {
-							resolve();
-							return;
-						}
-						const proxy = { progress: uniformsRef.current.uProgress.value };
-						gsap.to(proxy, {
-							progress: 1,
-							duration: 2.5,
-							ease: "power2.inOut",
-							onUpdate: () => {
-								if (uniformsRef.current) {
-									uniformsRef.current.uProgress.value = proxy.progress;
-								}
-							},
-							onComplete: resolve,
-						});
-					}),
-			}),
-			[],
-		);
-
-		return (
-			<canvas
-				ref={canvasRef}
-				className="fixed inset-0 z-30 pointer-events-none"
-				aria-hidden="true"
-			/>
-		);
-	},
-);
+	return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-30" />;
+};

@@ -1,8 +1,8 @@
 const MADRID_DAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+	day: "2-digit",
+	month: "2-digit",
 	timeZone: "Europe/Madrid",
 	year: "numeric",
-	month: "2-digit",
-	day: "2-digit",
 });
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

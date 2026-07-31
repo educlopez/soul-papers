@@ -1,7 +1,7 @@
 interface StoryContentProps {
+	author: string;
 	content: string;
 	title: string;
-	author: string;
 }
 
 /** Escapes HTML-significant characters so raw markup in untrusted text (e.g.
@@ -27,9 +27,11 @@ export function renderParagraphHtml(paragraph: string): string {
 /**
  * Renders story content styled as a handwritten letter on paper.
  */
+const PARAGRAPH_BREAK_REGEX = /\n\n+/;
+
 export function StoryContent({ content, title, author }: StoryContentProps) {
 	const paragraphs = content
-		.split(/\n\n+/)
+		.split(PARAGRAPH_BREAK_REGEX)
 		.map((p) => p.trim())
 		.filter(Boolean);
 
@@ -38,20 +40,20 @@ export function StoryContent({ content, title, author }: StoryContentProps) {
 			{/* Title — handwritten header */}
 			<header className="mb-8">
 				<h2
-					className="font-handwriting text-4xl md:text-5xl text-neutral-800 mb-4 leading-tight"
+					className="mb-4 font-handwriting text-4xl text-neutral-800 leading-tight md:text-5xl"
 					style={{ letterSpacing: "-0.01em" }}
 				>
 					{title}
 				</h2>
 
 				{/* Decorative ink line */}
-				<div className="flex items-center gap-3 mb-2">
+				<div className="mb-2 flex items-center gap-3">
 					<div className="h-px flex-1 bg-gradient-to-r from-neutral-300 via-neutral-400/50 to-transparent" />
 					<svg
 						width="16"
 						height="16"
 						viewBox="0 0 16 16"
-						className="text-neutral-300 flex-shrink-0"
+						className="flex-shrink-0 text-neutral-300"
 						aria-hidden="true"
 					>
 						<circle cx="8" cy="8" r="2" fill="currentColor" />
@@ -61,7 +63,7 @@ export function StoryContent({ content, title, author }: StoryContentProps) {
 			</header>
 
 			{/* Story body — handwriting font on ruled lines */}
-			<div className="font-handwriting text-xl md:text-2xl leading-[32px] text-neutral-700">
+			<div className="font-handwriting text-neutral-700 text-xl leading-[32px] md:text-2xl">
 				{paragraphs.map((paragraph) => (
 					<p
 						key={paragraph.slice(0, 40)}
@@ -75,12 +77,12 @@ export function StoryContent({ content, title, author }: StoryContentProps) {
 			</div>
 
 			{/* Signature — author name with flourish */}
-			<footer className="mt-10 pt-6 border-t border-neutral-200/60">
+			<footer className="mt-10 border-neutral-200/60 border-t pt-6">
 				<div className="flex items-end justify-end gap-2">
-					<span className="text-neutral-400 text-sm italic font-serif">with love,</span>
+					<span className="font-serif text-neutral-400 text-sm italic">with love,</span>
 				</div>
 				<p
-					className="font-handwriting text-2xl md:text-3xl text-neutral-600 text-right mt-1"
+					className="mt-1 text-right font-handwriting text-2xl text-neutral-600 md:text-3xl"
 					style={{
 						transform: "rotate(-2deg)",
 						transformOrigin: "right center",

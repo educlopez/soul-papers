@@ -13,8 +13,10 @@ export function isValidSlug(slug: string): boolean {
 function getRedis(): Redis | null {
 	const url = process.env.UPSTASH_REDIS_REST_URL;
 	const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-	if (!url || !token) return null;
-	return new Redis({ url, token });
+	if (!(url && token)) {
+		return null;
+	}
+	return new Redis({ token, url });
 }
 
 interface RouteContext {
@@ -28,11 +30,15 @@ const NULL_COUNT = { count: null } as const;
  * thrown error or a non-2xx status, so the reading experience is never blocked. */
 export async function POST(_request: Request, { params }: RouteContext) {
 	const { slug } = await params;
-	if (!isValidSlug(slug)) return Response.json(NULL_COUNT);
+	if (!isValidSlug(slug)) {
+		return Response.json(NULL_COUNT);
+	}
 
 	try {
 		const redis = getRedis();
-		if (!redis) return Response.json(NULL_COUNT);
+		if (!redis) {
+			return Response.json(NULL_COUNT);
+		}
 		const count = await redis.incr(`letter:${slug}`);
 		return Response.json({ count });
 	} catch {
@@ -43,11 +49,15 @@ export async function POST(_request: Request, { params }: RouteContext) {
 /** Read-only equivalent of POST — fetches the current count without incrementing. */
 export async function GET(_request: Request, { params }: RouteContext) {
 	const { slug } = await params;
-	if (!isValidSlug(slug)) return Response.json(NULL_COUNT);
+	if (!isValidSlug(slug)) {
+		return Response.json(NULL_COUNT);
+	}
 
 	try {
 		const redis = getRedis();
-		if (!redis) return Response.json(NULL_COUNT);
+		if (!redis) {
+			return Response.json(NULL_COUNT);
+		}
 		const count = await redis.get<number>(`letter:${slug}`);
 		return Response.json({ count: count ?? null });
 	} catch {

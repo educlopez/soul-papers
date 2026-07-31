@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
-import { Inter, Caveat } from "next/font/google";
+import { Caveat, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-handwriting" });
 
 export const metadata: Metadata = {
-	title: {
-		default: "Soul Papers",
-		template: "%s | Soul Papers",
-	},
 	description:
 		"Stories that remind us why the little things matter. Open a paper plane from a stranger.",
 	openGraph: {
-		title: "Soul Papers",
 		description: "One letter a day.",
-		type: "website",
 		locale: "en_US",
 		siteName: "Soul Papers",
+		title: "Soul Papers",
+		type: "website",
+	},
+	title: {
+		default: "Soul Papers",
+		template: "%s | Soul Papers",
 	},
 };
 

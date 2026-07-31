@@ -4,27 +4,30 @@ import matter from "gray-matter";
 import type { Story, StoryMeta } from "./types";
 
 const STORIES_DIR = path.join(process.cwd(), "content", "stories");
+const MDX_EXTENSION_REGEX = /\.mdx$/;
 
 export function parseStoryFile(raw: string, slug: string): Story {
 	const { data, content } = matter(raw);
 	return {
-		title: data.title,
 		author: data.author,
-		date: data.date,
-		tags: data.tags ?? [],
-		slug,
-		nudge: data.nudge,
-		tallyId: data.tallyId,
 		content: content.trim(),
+		date: data.date,
+		nudge: data.nudge,
+		slug,
+		tags: data.tags ?? [],
+		tallyId: data.tallyId,
+		title: data.title,
 	};
 }
 
 export function getAllStorySlugs(dir: string = STORIES_DIR): string[] {
-	if (!fs.existsSync(dir)) return [];
+	if (!fs.existsSync(dir)) {
+		return [];
+	}
 	return fs
 		.readdirSync(dir)
 		.filter((f) => f.endsWith(".mdx"))
-		.map((f) => f.replace(/\.mdx$/, ""))
+		.map((f) => f.replace(MDX_EXTENSION_REGEX, ""))
 		.sort();
 }
 
@@ -48,7 +51,9 @@ export function getAllStories(dir: string = STORIES_DIR): Story[] {
 
 export function getStoryBySlug(slug: string, dir: string = STORIES_DIR): Story | null {
 	const filePath = path.join(dir, `${slug}.mdx`);
-	if (!fs.existsSync(filePath)) return null;
+	if (!fs.existsSync(filePath)) {
+		return null;
+	}
 	const raw = fs.readFileSync(filePath, "utf-8");
 	return parseStoryFile(raw, slug);
 }

@@ -12,7 +12,9 @@ export const NUDGES = [
  * frontmatter override when set, otherwise a random line from the warm pool.
  */
 export function getNudge(story: { nudge?: string }): string {
-	if (story.nudge) return story.nudge;
+	if (story.nudge) {
+		return story.nudge;
+	}
 	const index = Math.floor(Math.random() * NUDGES.length);
 	return NUDGES[index];
 }

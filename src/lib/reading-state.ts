@@ -5,10 +5,10 @@ const ARCHIVE_KEY = "hpv_archive_history";
 const SCHEMA_VERSION = 2;
 
 interface ReadingStateV2 {
-	v: 2;
 	date: string;
 	/** Slug of today's ritual letter once read, or null if unread today. */
 	today: string | null;
+	v: 2;
 }
 
 // In-memory fallback when localStorage is unavailable
@@ -17,7 +17,7 @@ let memoryArchive: string[] = [];
 let useMemory = false;
 
 function freshStateFor(date: string): ReadingStateV2 {
-	return { v: SCHEMA_VERSION, date, today: null };
+	return { date, today: null, v: SCHEMA_VERSION };
 }
 
 function tryGetItem(key: string): string | null {
@@ -38,7 +38,9 @@ function trySetItem(key: string, value: string): void {
 }
 
 function isValidV2(value: unknown): value is ReadingStateV2 {
-	if (!value || typeof value !== "object") return false;
+	if (!value || typeof value !== "object") {
+		return false;
+	}
 	const candidate = value as Partial<ReadingStateV2>;
 	return (
 		candidate.v === SCHEMA_VERSION &&
@@ -58,7 +60,9 @@ function loadState(): ReadingStateV2 {
 	}
 
 	const raw = tryGetItem(STATE_KEY);
-	if (!raw) return freshStateFor(today);
+	if (!raw) {
+		return freshStateFor(today);
+	}
 
 	try {
 		const parsed: unknown = JSON.parse(raw);
@@ -99,7 +103,9 @@ export function markTodayRead(slug: string): void {
  */
 export function markArchiveRead(slug: string): void {
 	if (useMemory) {
-		if (!memoryArchive.includes(slug)) memoryArchive.push(slug);
+		if (!memoryArchive.includes(slug)) {
+			memoryArchive.push(slug);
+		}
 		return;
 	}
 
@@ -113,7 +119,9 @@ export function markArchiveRead(slug: string): void {
 
 /** Returns the list of archive letter slugs the visitor has opened. */
 export function getArchiveHistory(): string[] {
-	if (useMemory) return [...memoryArchive];
+	if (useMemory) {
+		return [...memoryArchive];
+	}
 	const raw = tryGetItem(ARCHIVE_KEY);
 	return raw ? JSON.parse(raw) : [];
 }

@@ -14,9 +14,11 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
+		if (!canvas) {
+			return;
+		}
 
-		const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+		const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, canvas });
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -25,16 +27,16 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 			50,
 			window.innerWidth / window.innerHeight,
 			0.1,
-			100,
+			100
 		);
 		camera.position.z = 8;
 
 		// Very bright lighting — papers must look white
-		scene.add(new THREE.AmbientLight(0xffffff, 3.0));
-		const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+		scene.add(new THREE.AmbientLight(0xff_ff_ff, 3.0));
+		const keyLight = new THREE.DirectionalLight(0xff_ff_ff, 1.5);
 		keyLight.position.set(3, 5, 4);
 		scene.add(keyLight);
-		const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+		const fillLight = new THREE.DirectionalLight(0xff_ff_ff, 0.8);
 		fillLight.position.set(-4, -2, 3);
 		scene.add(fillLight);
 
@@ -61,7 +63,10 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 			const c = document.createElement("canvas");
 			c.width = 256;
 			c.height = 360;
-			const ctx = c.getContext("2d")!;
+			const ctx = c.getContext("2d");
+			if (!ctx) {
+				throw new Error("2d canvas context unavailable");
+			}
 
 			// Base — almost pure white
 			ctx.fillStyle = "#fefcfa";
@@ -150,7 +155,7 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 				const y = pos.getY(j);
 
 				// Main curl — paper curling at edges
-				let z = Math.pow(Math.abs(x) / (w / 2), 2) * curlStrength;
+				let z = (Math.abs(x) / (w / 2)) ** 2 * curlStrength;
 
 				// Diagonal fold crease
 				z += Math.max(0, (x * foldAngle + y * 0.2) * 0.05);
@@ -163,7 +168,9 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 					const cx = w / 2;
 					const cy = -h / 2;
 					const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-					if (dist < 0.3) z += (0.3 - dist) * 0.15;
+					if (dist < 0.3) {
+						z += (0.3 - dist) * 0.15;
+					}
 				}
 
 				pos.setZ(j, z);
@@ -175,13 +182,13 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 			const tex = hasText ? makePaperTexture(i) : null;
 
 			const mat = new THREE.MeshPhongMaterial({
-				color: 0xffffff,
+				color: 0xff_ff_ff,
 				map: tex,
-				side: THREE.DoubleSide,
-				transparent: true,
 				opacity: 0.4 + Math.random() * 0.35,
-				specular: 0x444444,
 				shininess: 8,
+				side: THREE.DoubleSide,
+				specular: 0x44_44_44,
+				transparent: true,
 			});
 
 			const mesh = new THREE.Mesh(geo, mat);
@@ -189,13 +196,9 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 			mesh.position.set(
 				(Math.random() - 0.5) * 10 * aspect,
 				(Math.random() - 0.5) * 7,
-				(Math.random() - 0.5) * 5 - 1,
+				(Math.random() - 0.5) * 5 - 1
 			);
-			mesh.rotation.set(
-				Math.random() * Math.PI,
-				Math.random() * Math.PI,
-				Math.random() * Math.PI,
-			);
+			mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
 
 			// Cast subtle shadows on each other
 			mesh.castShadow = true;
@@ -203,18 +206,18 @@ function useFloatingPapers(canvasRef: React.RefObject<HTMLCanvasElement | null>)
 
 			scene.add(mesh);
 			papers.push({
-				mesh,
+				ampX: 0.15 + Math.random() * 0.3,
+				ampY: 0.1 + Math.random() * 0.25,
 				basePos: mesh.position.clone(),
-				speedY: 0.08 + Math.random() * 0.12,
+				mesh,
+				phaseX: Math.random() * Math.PI * 2,
+				phaseY: Math.random() * Math.PI * 2,
 				speedRot: new THREE.Vector3(
 					(0.02 + Math.random() * 0.04) * (Math.random() > 0.5 ? 1 : -1),
 					(0.01 + Math.random() * 0.03) * (Math.random() > 0.5 ? 1 : -1),
-					(0.015 + Math.random() * 0.03) * (Math.random() > 0.5 ? 1 : -1),
+					(0.015 + Math.random() * 0.03) * (Math.random() > 0.5 ? 1 : -1)
 				),
-				phaseX: Math.random() * Math.PI * 2,
-				phaseY: Math.random() * Math.PI * 2,
-				ampX: 0.15 + Math.random() * 0.3,
-				ampY: 0.1 + Math.random() * 0.25,
+				speedY: 0.08 + Math.random() * 0.12,
 			});
 		}
 
@@ -285,46 +288,46 @@ export function IntroOverlay({ onStart }: IntroOverlayProps) {
 			tl.fromTo(
 				canvasRef.current,
 				{ opacity: 0 },
-				{ opacity: 1, duration: 1.5, ease: "power2.out" },
+				{ duration: 1.5, ease: "power2.out", opacity: 1 }
 			);
 
 			// Title fades up
 			tl.fromTo(
 				titleRef.current,
 				{ opacity: 0, y: 25 },
-				{ opacity: 1, y: 0, duration: 1, ease: "power3.out" },
-				"-=1.0",
+				{ duration: 1, ease: "power3.out", opacity: 1, y: 0 },
+				"-=1.0"
 			);
 
 			// Decorative line draws in
 			tl.fromTo(
 				lineRef.current,
-				{ scaleX: 0, opacity: 0 },
-				{ scaleX: 1, opacity: 1, duration: 0.7, ease: "power2.inOut" },
-				"-=0.4",
+				{ opacity: 0, scaleX: 0 },
+				{ duration: 0.7, ease: "power2.inOut", opacity: 1, scaleX: 1 },
+				"-=0.4"
 			);
 
 			// Subtitle fades up
 			tl.fromTo(
 				subtitleRef.current,
 				{ opacity: 0, y: 15 },
-				{ opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
-				"-=0.2",
+				{ duration: 0.7, ease: "power2.out", opacity: 1, y: 0 },
+				"-=0.2"
 			);
 
 			// Hint
 			tl.fromTo(
 				hintRef.current,
 				{ opacity: 0 },
-				{ opacity: 1, duration: 0.5, ease: "power1.out" },
-				"-=0.1",
+				{ duration: 0.5, ease: "power1.out", opacity: 1 },
+				"-=0.1"
 			);
 
 			// Button
 			tl.fromTo(
 				buttonRef.current,
 				{ opacity: 0, y: 10 },
-				{ opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+				{ duration: 0.5, ease: "power2.out", opacity: 1, y: 0 }
 			);
 		}, containerRef);
 
@@ -338,10 +341,10 @@ export function IntroOverlay({ onStart }: IntroOverlayProps) {
 		}
 
 		gsap.to(containerRef.current, {
-			opacity: 0,
 			duration: 0.8,
 			ease: "power2.in",
 			onComplete: onStart,
+			opacity: 0,
 		});
 	};
 
@@ -352,25 +355,22 @@ export function IntroOverlay({ onStart }: IntroOverlayProps) {
 			style={{ backgroundColor: "rgba(250, 246, 240, 0.93)" }}
 		>
 			{/* 3D floating papers */}
-			<canvas
-				ref={canvasRef}
-				className="absolute inset-0 opacity-0"
-				aria-hidden="true"
-			/>
+			<canvas ref={canvasRef} className="absolute inset-0 opacity-0" />
 
 			{/* Vignette */}
 			<div
-				className="absolute inset-0 pointer-events-none"
+				className="pointer-events-none absolute inset-0"
 				style={{
-					background: "radial-gradient(ellipse at center, transparent 40%, rgba(139, 119, 85, 0.07) 100%)",
+					background:
+						"radial-gradient(ellipse at center, transparent 40%, rgba(139, 119, 85, 0.07) 100%)",
 				}}
 			/>
 
 			{/* Text content */}
-			<div className="absolute inset-0 flex flex-col items-center justify-center px-6 pointer-events-none">
+			<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-6">
 				<h1
 					ref={titleRef}
-					className="font-handwriting text-7xl md:text-9xl text-neutral-900 mb-5 text-center leading-none opacity-0"
+					className="mb-5 text-center font-handwriting text-7xl text-neutral-900 leading-none opacity-0 md:text-9xl"
 					style={{ letterSpacing: "-0.02em" }}
 				>
 					Soul Papers
@@ -378,7 +378,7 @@ export function IntroOverlay({ onStart }: IntroOverlayProps) {
 
 				<div
 					ref={lineRef}
-					className="w-24 md:w-36 h-0.5 mb-7 opacity-0"
+					className="mb-7 h-0.5 w-24 opacity-0 md:w-36"
 					style={{
 						background: "linear-gradient(90deg, transparent, #8a7a60, transparent)",
 						transformOrigin: "center",
@@ -387,15 +387,12 @@ export function IntroOverlay({ onStart }: IntroOverlayProps) {
 
 				<p
 					ref={subtitleRef}
-					className="font-serif text-lg md:text-xl text-neutral-700 max-w-md text-center mb-3 leading-relaxed italic opacity-0"
+					className="mb-3 max-w-md text-center font-serif text-lg text-neutral-700 italic leading-relaxed opacity-0 md:text-xl"
 				>
 					Stories that remind us why the little things matter.
 				</p>
 
-				<span
-					ref={hintRef}
-					className="font-serif text-sm text-neutral-500 mb-14 opacity-0"
-				>
+				<span ref={hintRef} className="mb-14 font-serif text-neutral-500 text-sm opacity-0">
 					Click a paper plane. Read something beautiful.
 				</span>
 
@@ -403,27 +400,29 @@ export function IntroOverlay({ onStart }: IntroOverlayProps) {
 					ref={buttonRef}
 					type="button"
 					onClick={handleStart}
-					className="group relative opacity-0 pointer-events-auto"
+					className="group pointer-events-auto relative opacity-0"
 				>
 					{/* Paper note button */}
 					<div
-						className="relative px-10 py-4 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-1"
+						className="relative px-10 py-4 transition-transform duration-300 group-hover:-rotate-1 group-hover:scale-105"
 						style={{
 							background: "linear-gradient(135deg, #fefcfa 0%, #f5ece0 100%)",
-							boxShadow: "0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06), inset 0 0 12px rgba(139, 119, 85, 0.05)",
 							borderRadius: "2px",
+							boxShadow:
+								"0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06), inset 0 0 12px rgba(139, 119, 85, 0.05)",
 							transform: "rotate(1deg)",
 						}}
 					>
 						{/* Tape strip at top */}
 						<div
-							className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-14 h-5 rounded-sm"
+							className="absolute -top-2.5 left-1/2 h-5 w-14 -translate-x-1/2 rounded-sm"
 							style={{
-								background: "linear-gradient(180deg, rgba(217, 200, 155, 0.6), rgba(217, 200, 155, 0.35))",
 								backdropFilter: "blur(1px)",
+								background:
+									"linear-gradient(180deg, rgba(217, 200, 155, 0.6), rgba(217, 200, 155, 0.35))",
 							}}
 						/>
-						<span className="font-handwriting text-2xl text-neutral-700 group-hover:text-neutral-900 transition-colors">
+						<span className="font-handwriting text-2xl text-neutral-700 transition-colors group-hover:text-neutral-900">
 							Unfold a story
 						</span>
 					</div>

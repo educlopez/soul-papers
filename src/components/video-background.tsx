@@ -18,7 +18,7 @@ export function VideoBackground() {
 	if (isMobile || videoError) {
 		return (
 			<div
-				className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+				className="fixed inset-0 -z-10 bg-center bg-cover bg-no-repeat"
 				style={{ backgroundImage: "url(/images/lofi-bg.png)" }}
 				aria-hidden="true"
 			>

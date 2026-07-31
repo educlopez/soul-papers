@@ -69,7 +69,7 @@ body {
 .paper-texture {
 	background-color: #faf6f0;
 	background-image:
-		/* Subtle fiber/grain noise */
+/* Subtle fiber/grain noise */
 		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
 		/* Warm parchment gradient */
 		linear-gradient(
@@ -85,7 +85,7 @@ body {
 /* Aged paper edge effect */
 .paper-edges {
 	box-shadow:
-		/* Inner shadow for depth */
+/* Inner shadow for depth */
 		inset 0 0 30px rgba(139, 119, 85, 0.08),
 		inset 0 0 80px rgba(139, 119, 85, 0.04),
 		/* Outer shadow */
@@ -103,6 +103,6 @@ body {
 		rgba(176, 160, 132, 0.15) 31px,
 		rgba(176, 160, 132, 0.15) 32px
 	);
-	background-size: 100% 32px;
 	background-position: 0 8px;
+	background-size: 100% 32px;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { gsap } from "gsap";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlaneConfig } from "./paper-plane";
 import { PaperPlane } from "./paper-plane";
@@ -12,12 +11,12 @@ interface PaperPlanesProps {
 
 function generatePlanes(count: number): PlaneConfig[] {
 	return Array.from({ length: count }, (_, i) => ({
-		id: i,
 		delay: Math.random() * 4,
 		duration: 12 + Math.random() * 8, // 12-20s per pass
+		id: i,
+		reverse: Math.random() > 0.5,
 		scale: 0.8 + Math.random() * 0.5, // 0.8-1.3
 		yOffset: Math.random(), // 0-1 normalized
-		reverse: Math.random() > 0.5,
 	}));
 }
 
@@ -44,14 +43,16 @@ export function PaperPlanes({ interactive, onPlaneClick }: PaperPlanesProps) {
 
 	const handlePlaneClick = useCallback(
 		(_id: number, _element: HTMLElement) => {
-			if (!interactive) return;
+			if (!interactive) {
+				return;
+			}
 			onPlaneClick();
 		},
-		[interactive, onPlaneClick],
+		[interactive, onPlaneClick]
 	);
 
 	return (
-		<div ref={containerRef} className="fixed inset-0 z-10 pointer-events-none">
+		<div ref={containerRef} className="pointer-events-none fixed inset-0 z-10">
 			<div className="pointer-events-auto h-full w-full">
 				{planes.map((plane) => (
 					<PaperPlane

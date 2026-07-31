@@ -56,7 +56,7 @@ describe("generateSlug", () => {
 
 	it("falls back to a disambiguated slug on collision", () => {
 		expect(generateSlug("A New Letter", new Set(["a-new-letter"]), "tally123")).toBe(
-			"a-new-letter-tally123",
+			"a-new-letter-tally123"
 		);
 	});
 
@@ -92,11 +92,11 @@ describe("computeNextAvailableDate", () => {
 describe("buildLetterMdx", () => {
 	it("produces frontmatter + body matching the seed convention", () => {
 		const mdx = buildLetterMdx({
-			title: "The Garden",
 			author: "A grandmother from Seville, 82",
+			content: "Dear whoever finds this,\n\nWith love.",
 			date: "2026-03-11",
 			tallyId: "sub_1",
-			content: "Dear whoever finds this,\n\nWith love.",
+			title: "The Garden",
 		});
 		expect(mdx).toBe(
 			[
@@ -109,28 +109,28 @@ describe("buildLetterMdx", () => {
 				"",
 				"Dear whoever finds this,\n\nWith love.",
 				"",
-			].join("\n"),
+			].join("\n")
 		);
 	});
 
 	it("escapes double quotes and backslashes in frontmatter values", () => {
 		const mdx = buildLetterMdx({
-			title: 'A "quoted" title',
 			author: "Author",
+			content: "Body",
 			date: "2026-03-11",
 			tallyId: "sub_1",
-			content: "Body",
+			title: 'A "quoted" title',
 		});
 		expect(mdx).toContain('title: "A \\"quoted\\" title"');
 	});
 
 	it("strips embedded newlines/control chars from title and author so gray-matter round-trips cleanly", () => {
 		const mdx = buildLetterMdx({
-			title: "Frontmatter breaker\n---\ntitle: injected",
 			author: "Attacker\r\nauthor: hacked",
+			content: "Body",
 			date: "2026-03-11",
 			tallyId: "sub_1",
-			content: "Body",
+			title: "Frontmatter breaker\n---\ntitle: injected",
 		});
 
 		expect(() => matter(mdx)).not.toThrow();
@@ -143,11 +143,11 @@ describe("buildLetterMdx", () => {
 
 	it("truncates excessively long title/author values to a sane length", () => {
 		const mdx = buildLetterMdx({
-			title: "A".repeat(500),
 			author: "B".repeat(500),
+			content: "Body",
 			date: "2026-03-11",
 			tallyId: "sub_1",
-			content: "Body",
+			title: "A".repeat(500),
 		});
 
 		const { data } = matter(mdx);
@@ -160,9 +160,9 @@ describe("parseTallySubmission", () => {
 	it("parses a complete, consented submission", () => {
 		const parsed = parseTallySubmission(submission(), QUESTIONS);
 		expect(parsed).toEqual({
-			tallyId: "sub_1",
-			content: "Dear whoever finds this,",
 			author: "A grandmother from Seville, 82",
+			content: "Dear whoever finds this,",
+			tallyId: "sub_1",
 			title: "The Garden",
 		});
 	});
@@ -248,11 +248,13 @@ describe("branchNameForTallyId", () => {
 describe("createLetterDraft", () => {
 	it("assembles a full draft from a parsed submission", () => {
 		const parsed = parseTallySubmission(submission(), QUESTIONS);
-		if (!parsed) throw new Error("expected parsed submission");
+		if (!parsed) {
+			throw new Error("expected parsed submission");
+		}
 
 		const draft = createLetterDraft(parsed, {
-			existingSlugs: new Set(["the-garden-in-winter"]),
 			existingDates: new Set(["2026-03-11"]),
+			existingSlugs: new Set(["the-garden-in-winter"]),
 			now: new Date("2026-03-10T10:00:00Z"),
 		});
 
@@ -275,11 +277,13 @@ describe("createLetterDraft", () => {
 			],
 		});
 		const parsed = parseTallySubmission(sub, QUESTIONS);
-		if (!parsed) throw new Error("expected parsed submission");
+		if (!parsed) {
+			throw new Error("expected parsed submission");
+		}
 
 		const draft = createLetterDraft(parsed, {
-			existingSlugs: new Set(),
 			existingDates: new Set(),
+			existingSlugs: new Set(),
 			now: new Date("2026-03-10T10:00:00Z"),
 		});
 

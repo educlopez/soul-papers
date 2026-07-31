@@ -4,9 +4,9 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 interface MemoryBubblesProps {
+	count?: number;
 	interactive: boolean;
 	onBubbleClick: () => void;
-	count?: number;
 }
 
 // --- Custom bubble shader ---
@@ -95,16 +95,16 @@ void main() {
 // --- Bubble animation state ---
 
 interface BubbleAnim {
+	ampX: number;
+	ampY: number;
 	baseX: number;
 	baseY: number;
 	baseZ: number;
+	phaseX: number;
+	phaseY: number;
 	radius: number;
 	speedX: number;
 	speedY: number;
-	phaseX: number;
-	phaseY: number;
-	ampX: number;
-	ampY: number;
 }
 
 function generateBubbles(count: number, aspect: number): BubbleAnim[] {
@@ -112,16 +112,16 @@ function generateBubbles(count: number, aspect: number): BubbleAnim[] {
 	const visibleW = visibleH * aspect;
 
 	return Array.from({ length: count }, () => ({
+		ampX: 0.3 + Math.random() * 0.6,
+		ampY: 0.2 + Math.random() * 0.5,
 		baseX: (Math.random() - 0.5) * visibleW * 0.8,
 		baseY: (Math.random() - 0.5) * visibleH * 0.8,
 		baseZ: -1 + Math.random() * 2,
+		phaseX: Math.random() * Math.PI * 2,
+		phaseY: Math.random() * Math.PI * 2,
 		radius: 0.1 + Math.random() * 0.18,
 		speedX: 0.12 + Math.random() * 0.15,
 		speedY: 0.08 + Math.random() * 0.12,
-		phaseX: Math.random() * Math.PI * 2,
-		phaseY: Math.random() * Math.PI * 2,
-		ampX: 0.3 + Math.random() * 0.6,
-		ampY: 0.2 + Math.random() * 0.5,
 	}));
 }
 
@@ -139,7 +139,9 @@ export function MemoryBubbles({
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
+		if (!canvas) {
+			return;
+		}
 
 		const count = countProp ?? (window.innerWidth < 768 ? 6 : 12);
 		const aspect = window.innerWidth / window.innerHeight;
@@ -147,9 +149,9 @@ export function MemoryBubbles({
 
 		// --- Renderer ---
 		const renderer = new THREE.WebGLRenderer({
-			canvas,
 			alpha: true,
 			antialias: true,
+			canvas,
 			premultipliedAlpha: false,
 		});
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -162,16 +164,16 @@ export function MemoryBubbles({
 
 		// --- Bubble material ---
 		const material = new THREE.ShaderMaterial({
-			vertexShader: bubbleVertex,
-			fragmentShader: bubbleFragment,
-			uniforms: {
-				uTime: { value: 0 },
-				uLightDir: { value: new THREE.Vector3(3, 4, 5).normalize() },
-			},
-			transparent: true,
-			depthWrite: false,
-			side: THREE.FrontSide,
 			blending: THREE.AdditiveBlending,
+			depthWrite: false,
+			fragmentShader: bubbleFragment,
+			side: THREE.FrontSide,
+			transparent: true,
+			uniforms: {
+				uLightDir: { value: new THREE.Vector3(3, 4, 5).normalize() },
+				uTime: { value: 0 },
+			},
+			vertexShader: bubbleVertex,
 		});
 
 		// --- Instanced Mesh ---
@@ -215,7 +217,9 @@ export function MemoryBubbles({
 		const pointer = new THREE.Vector2();
 
 		const handleClick = (e: MouseEvent) => {
-			if (!interactiveRef.current) return;
+			if (!interactiveRef.current) {
+				return;
+			}
 
 			pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
 			pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;

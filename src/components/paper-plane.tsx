@@ -7,24 +7,24 @@ import { useEffect, useRef } from "react";
 gsap.registerPlugin(MotionPathPlugin);
 
 export interface PlaneConfig {
-	id: number;
 	/** Delay before animation starts (seconds) */
 	delay: number;
 	/** Animation duration (seconds) */
 	duration: number;
+	id: number;
+	/** Whether flight direction is reversed */
+	reverse: boolean;
 	/** Scale factor */
 	scale: number;
 	/** Y offset for flight path variation */
 	yOffset: number;
-	/** Whether flight direction is reversed */
-	reverse: boolean;
 }
 
 interface PaperPlaneProps {
 	config: PlaneConfig;
 	interactive: boolean;
-	reducedMotion: boolean;
 	onClick: (id: number, element: HTMLElement) => void;
+	reducedMotion: boolean;
 }
 
 export function PaperPlane({ config, interactive, reducedMotion, onClick }: PaperPlaneProps) {
@@ -34,7 +34,9 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 
 	useEffect(() => {
 		const el = planeRef.current;
-		if (!el || reducedMotion) return;
+		if (!el || reducedMotion) {
+			return;
+		}
 
 		const viewportW = window.innerWidth;
 		const viewportH = window.innerHeight;
@@ -55,15 +57,15 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 		];
 
 		tweenRef.current = gsap.to(el, {
+			delay: config.delay,
+			duration: config.duration,
+			ease: "none",
 			motionPath: {
-				path,
 				autoRotate: true,
 				curviness: 1.5,
+				path,
 			},
-			duration: config.duration,
-			delay: config.delay,
 			repeat: -1,
-			ease: "none",
 		});
 
 		// Subtle banking wobble on the plane itself, independent of path autoRotate
@@ -73,12 +75,12 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 				svg,
 				{ rotation: -5 },
 				{
-					rotation: 5,
 					duration: 1.2 + Math.random() * 0.8,
-					yoyo: true,
-					repeat: -1,
 					ease: "sine.inOut",
-				},
+					repeat: -1,
+					rotation: 5,
+					yoyo: true,
+				}
 			);
 		}
 
@@ -91,14 +93,16 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 	// For reduced motion: static centered position
 	const staticStyle = reducedMotion
 		? {
-				transform: `scale(${config.scale})`,
 				left: `${15 + config.id * 12}%`,
 				top: `${20 + config.yOffset * 40}%`,
+				transform: `scale(${config.scale})`,
 			}
 		: { transform: `scale(${config.scale})` };
 
 	const handleClick = () => {
-		if (!interactive || !planeRef.current) return;
+		if (!(interactive && planeRef.current)) {
+			return;
+		}
 		onClick(config.id, planeRef.current);
 	};
 
@@ -127,7 +131,7 @@ export function PaperPlane({ config, interactive, reducedMotion, onClick }: Pape
 				xmlns="http://www.w3.org/2000/svg"
 				viewBox="0 0 115 76"
 				fill="none"
-				className="w-12 md:w-10 h-auto drop-shadow-md"
+				className="h-auto w-12 drop-shadow-md md:w-10"
 				aria-hidden="true"
 			>
 				<g transform="translate(0 76) rotate(-90)">

@@ -9,8 +9,8 @@ import { getAllStories } from "@/lib/stories";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-	title: "Archive",
 	description: "Past letters from Soul Papers.",
+	title: "Archive",
 };
 
 export default function ArchivePage() {
@@ -21,11 +21,11 @@ export default function ArchivePage() {
 			<Header />
 			<main className="pt-16">
 				<div className="min-h-screen py-16 md:py-24">
-					<div className="max-w-2xl mx-auto px-6">
-						<h1 className="text-4xl md:text-5xl font-serif font-bold text-neutral-900 mb-4 leading-tight">
+					<div className="mx-auto max-w-2xl px-6">
+						<h1 className="mb-4 font-bold font-serif text-4xl text-neutral-900 leading-tight md:text-5xl">
 							Archive
 						</h1>
-						<p className="text-neutral-500 mb-10">
+						<p className="mb-10 text-neutral-500">
 							Letters from other days, in case you want to return to one.
 						</p>
 						<ArchiveBrowser letters={letters} />

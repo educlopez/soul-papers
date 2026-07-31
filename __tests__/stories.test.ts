@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getAllStories, getAllStorySlugs, parseStoryFile } from "@/lib/stories";
 
-const fixtureDir = path.join(__dirname, "fixtures");
+const fixtureDir = path.join(import.meta.dirname, "fixtures");
 const fixtureFile = path.join(fixtureDir, "test-story.mdx");
 
 describe("parseStoryFile", () => {
@@ -79,18 +79,18 @@ describe("getAllStories", () => {
 				"---",
 				"",
 				"Body.",
-			].join("\n"),
+			].join("\n")
 		);
 		// Unclosed double-quoted YAML scalar — gray-matter/js-yaml throws on parse.
 		fs.writeFileSync(
 			path.join(corruptDir, "bad-letter.mdx"),
-			["---", 'title: "Broken', 'author: "Someone"', "---", "", "Body."].join("\n"),
+			["---", 'title: "Broken', 'author: "Someone"', "---", "", "Body."].join("\n")
 		);
 		vi.spyOn(console, "error").mockImplementation(() => undefined);
 	});
 
 	afterEach(() => {
-		fs.rmSync(corruptDir, { recursive: true, force: true });
+		fs.rmSync(corruptDir, { force: true, recursive: true });
 		vi.restoreAllMocks();
 	});
 
@@ -104,7 +104,7 @@ describe("getAllStories", () => {
 		expect(stories[0].title).toBe("Good Letter");
 		expect(console.error).toHaveBeenCalledWith(
 			expect.stringContaining("bad-letter.mdx"),
-			expect.anything(),
+			expect.anything()
 		);
 	});
 });

@@ -2,17 +2,17 @@ import Link from "next/link";
 
 export function Header() {
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-neutral-100">
-			<nav className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+		<header className="fixed top-0 right-0 left-0 z-50 border-neutral-100 border-b bg-white/80 backdrop-blur-sm">
+			<nav className="mx-auto flex max-w-2xl items-center justify-between px-6 py-4">
 				<Link
 					href="/"
-					className="text-lg font-semibold text-neutral-900 hover:text-neutral-600 transition-colors"
+					className="font-semibold text-lg text-neutral-900 transition-colors hover:text-neutral-600"
 				>
 					Soul Papers
 				</Link>
 				<Link
 					href="/about"
-					className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
+					className="text-neutral-500 text-sm transition-colors hover:text-neutral-900"
 				>
 					About
 				</Link>

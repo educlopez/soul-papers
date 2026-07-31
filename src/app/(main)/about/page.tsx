@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
-	title: "About",
 	description: "What Soul Papers is and why it exists.",
+	title: "About",
 };
 
 export default function AboutPage() {
@@ -12,15 +12,15 @@ export default function AboutPage() {
 			<Header />
 			<main className="pt-16">
 				<div className="min-h-screen py-16 md:py-24">
-					<div className="max-w-2xl mx-auto px-6">
-						<h1 className="text-4xl md:text-5xl font-serif font-bold text-neutral-900 mb-8 leading-tight">
+					<div className="mx-auto max-w-2xl px-6">
+						<h1 className="mb-8 font-bold font-serif text-4xl text-neutral-900 leading-tight md:text-5xl">
 							About
 						</h1>
 
-						<div className="space-y-6 text-lg text-neutral-600 leading-relaxed font-serif">
+						<div className="space-y-6 font-serif text-lg text-neutral-600 leading-relaxed">
 							<p>
-								<strong className="text-neutral-900">Soul Papers</strong> is a collection of
-								real stories about the small things that changed someone&apos;s life or perspective.
+								<strong className="text-neutral-900">Soul Papers</strong> is a collection of real
+								stories about the small things that changed someone&apos;s life or perspective.
 							</p>
 
 							<p>
@@ -39,7 +39,7 @@ export default function AboutPage() {
 								something beautiful with you.
 							</p>
 
-							<p className="text-neutral-400 text-base italic">
+							<p className="text-base text-neutral-400 italic">
 								Because sometimes the smallest things take up the most room in your heart.
 							</p>
 						</div>

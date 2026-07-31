@@ -25,9 +25,9 @@ const TALLY_API_BASE = "https://api.tally.so";
 const PR_BRANCH_PREFIX = "letter/tally-";
 
 interface TallySubmissionsPage {
+	hasMore?: boolean;
 	questions?: TallyQuestion[];
 	submissions?: TallySubmission[];
-	hasMore?: boolean;
 }
 
 interface GithubPull {
@@ -36,13 +36,15 @@ interface GithubPull {
 
 function requireEnv(name: string): string {
 	const value = process.env[name];
-	if (!value) throw new Error(`Missing required env var: ${name}`);
+	if (!value) {
+		throw new Error(`Missing required env var: ${name}`);
+	}
 	return value;
 }
 
 async function fetchAllSubmissions(
 	apiKey: string,
-	formId: string,
+	formId: string
 ): Promise<{ questions: TallyQuestion[]; submissions: TallySubmission[] }> {
 	const submissions: TallySubmission[] = [];
 	let questions: TallyQuestion[] = [];
@@ -58,7 +60,9 @@ async function fetchAllSubmissions(
 		const data = (await res.json()) as TallySubmissionsPage;
 		questions = data.questions ?? questions;
 		submissions.push(...(data.submissions ?? []));
-		if (!data.hasMore) break;
+		if (!data.hasMore) {
+			break;
+		}
 		page++;
 	}
 
@@ -72,7 +76,9 @@ async function fetchAllSubmissions(
 async function fetchOpenPrTallyIds(): Promise<Set<string>> {
 	const token = process.env.GITHUB_TOKEN;
 	const repo = process.env.GITHUB_REPOSITORY;
-	if (!token || !repo) return new Set();
+	if (!(token && repo)) {
+		return new Set();
+	}
 
 	const ids = new Set<string>();
 	let page = 1;
@@ -80,7 +86,7 @@ async function fetchOpenPrTallyIds(): Promise<Set<string>> {
 	for (;;) {
 		const res = await fetch(
 			`https://api.github.com/repos/${repo}/pulls?state=open&per_page=100&page=${page}`,
-			{ headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } },
+			{ headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}` } }
 		);
 		if (!res.ok) {
 			console.error(`Warning: could not list open PRs (${res.status}), continuing without them.`);
@@ -92,7 +98,9 @@ async function fetchOpenPrTallyIds(): Promise<Set<string>> {
 				ids.add(pr.head.ref.slice(PR_BRANCH_PREFIX.length));
 			}
 		}
-		if (prs.length < 100) break;
+		if (prs.length < 100) {
+			break;
+		}
 		page++;
 	}
 
@@ -101,7 +109,9 @@ async function fetchOpenPrTallyIds(): Promise<Set<string>> {
 
 function writeGithubOutput(entries: Record<string, string>): void {
 	const outputPath = process.env.GITHUB_OUTPUT;
-	if (!outputPath) return;
+	if (!outputPath) {
+		return;
+	}
 	const lines = Object.entries(entries).map(([key, value]) => {
 		if (value.includes("\n")) {
 			const delimiter = `EOF_${key}_${Date.now()}`;
@@ -124,7 +134,7 @@ async function commandList(): Promise<void> {
 	const existingTallyIds = new Set(
 		getAllStories()
 			.map((s) => s.tallyId)
-			.filter((id): id is string => Boolean(id)),
+			.filter((id): id is string => Boolean(id))
 	);
 	const excludeIds = new Set([...existingTallyIds, ...openPrTallyIds]);
 
@@ -139,21 +149,27 @@ async function commandList(): Promise<void> {
 }
 
 async function commandWrite(tallyId: string | undefined): Promise<void> {
-	if (!tallyId) throw new Error("Usage: ingest-tally.ts write <tallyId>");
+	if (!tallyId) {
+		throw new Error("Usage: ingest-tally.ts write <tallyId>");
+	}
 	const apiKey = requireEnv("TALLY_API_KEY");
 	const formId = process.env.TALLY_FORM_ID || DEFAULT_FORM_ID;
 
 	const { questions, submissions } = await fetchAllSubmissions(apiKey, formId);
 	const submission = submissions.find((s) => s.id === tallyId);
-	if (!submission) throw new Error(`No Tally submission found with id ${tallyId}`);
+	if (!submission) {
+		throw new Error(`No Tally submission found with id ${tallyId}`);
+	}
 
 	const parsed = parseTallySubmission(submission, questions);
-	if (!parsed) throw new Error(`Submission ${tallyId} is incomplete or unconsented — skipping`);
+	if (!parsed) {
+		throw new Error(`Submission ${tallyId} is incomplete or unconsented — skipping`);
+	}
 
 	const stories = getAllStories();
 	const draft = createLetterDraft(parsed, {
-		existingSlugs: new Set(stories.map((s) => s.slug)),
 		existingDates: new Set(stories.map((s) => s.date)),
+		existingSlugs: new Set(stories.map((s) => s.slug)),
 	});
 
 	const filePath = path.join(process.cwd(), "content", "stories", `${draft.slug}.mdx`);
@@ -161,13 +177,7 @@ async function commandWrite(tallyId: string | undefined): Promise<void> {
 	console.log(`Wrote ${filePath}`);
 
 	writeGithubOutput({
-		branch: draft.branch,
-		slug: draft.slug,
-		title: draft.title,
 		author: draft.author,
-		date: draft.date,
-		tallyId: draft.tallyId,
-		filePath,
 		body: [
 			`**Persona:** ${draft.author}`,
 			`**Scheduled date:** ${draft.date}`,
@@ -176,6 +186,12 @@ async function commandWrite(tallyId: string | undefined): Promise<void> {
 			"",
 			parsed.content,
 		].join("\n"),
+		branch: draft.branch,
+		date: draft.date,
+		filePath,
+		slug: draft.slug,
+		tallyId: draft.tallyId,
+		title: draft.title,
 	});
 }
 

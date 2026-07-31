@@ -5,15 +5,15 @@ import { fetchCount, recordRead } from "@/lib/read-counter";
 const localStorageMock = (() => {
 	let store: Record<string, string> = {};
 	return {
-		getItem: (key: string) => store[key] ?? null,
-		setItem: (key: string, value: string) => {
-			store[key] = value;
+		clear: () => {
+			store = {};
 		},
+		getItem: (key: string) => store[key] ?? null,
 		removeItem: (key: string) => {
 			delete store[key];
 		},
-		clear: () => {
-			store = {};
+		setItem: (key: string, value: string) => {
+			store[key] = value;
 		},
 	};
 })();
@@ -37,7 +37,7 @@ describe("read-counter", () => {
 			expect(fetch).toHaveBeenCalledTimes(1);
 			expect(fetch).toHaveBeenCalledWith(
 				"/api/letters/a-letter-never-sent",
-				expect.objectContaining({ method: "POST", keepalive: true }),
+				expect.objectContaining({ keepalive: true, method: "POST" })
 			);
 		});
 
@@ -97,7 +97,7 @@ describe("read-counter", () => {
 		it("never throws when fetch rejects (fire-and-forget swallow)", () => {
 			vi.stubGlobal(
 				"fetch",
-				vi.fn(() => Promise.reject(new Error("network down"))),
+				vi.fn(() => Promise.reject(new Error("network down")))
 			);
 
 			expect(() => recordRead("a-letter-never-sent")).not.toThrow();
@@ -108,7 +108,7 @@ describe("read-counter", () => {
 				"fetch",
 				vi.fn(() => {
 					throw new Error("network down");
-				}),
+				})
 			);
 
 			expect(() => recordRead("a-letter-never-sent")).not.toThrow();
@@ -121,10 +121,10 @@ describe("read-counter", () => {
 				"fetch",
 				vi.fn(() =>
 					Promise.resolve({
-						ok: true,
 						json: () => Promise.resolve({ count: 7 }),
-					}),
-				),
+						ok: true,
+					})
+				)
 			);
 
 			await expect(fetchCount("a-letter-never-sent")).resolves.toBe(7);
@@ -136,10 +136,10 @@ describe("read-counter", () => {
 				"fetch",
 				vi.fn(() =>
 					Promise.resolve({
-						ok: false,
 						json: () => Promise.resolve({ count: null }),
-					}),
-				),
+						ok: false,
+					})
+				)
 			);
 
 			await expect(fetchCount("a-letter-never-sent")).resolves.toBeNull();
@@ -150,10 +150,10 @@ describe("read-counter", () => {
 				"fetch",
 				vi.fn(() =>
 					Promise.resolve({
-						ok: true,
 						json: () => Promise.resolve({ count: null }),
-					}),
-				),
+						ok: true,
+					})
+				)
 			);
 
 			await expect(fetchCount("a-letter-never-sent")).resolves.toBeNull();
@@ -162,7 +162,7 @@ describe("read-counter", () => {
 		it("returns null when fetch rejects, without throwing", async () => {
 			vi.stubGlobal(
 				"fetch",
-				vi.fn(() => Promise.reject(new Error("network down"))),
+				vi.fn(() => Promise.reject(new Error("network down")))
 			);
 
 			await expect(fetchCount("a-letter-never-sent")).resolves.toBeNull();

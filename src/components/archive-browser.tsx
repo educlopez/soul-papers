@@ -43,10 +43,10 @@ export function ArchiveBrowser({ letters }: ArchiveBrowserProps) {
 						<button
 							type="button"
 							onClick={() => handleOpen(letter)}
-							className="w-full text-left px-6 py-4 rounded-lg border border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 transition-colors"
+							className="w-full rounded-lg border border-neutral-200 px-6 py-4 text-left transition-colors hover:border-neutral-400 hover:bg-neutral-50"
 						>
 							<span className="block font-serif text-lg text-neutral-900">{letter.title}</span>
-							<span className="block text-sm text-neutral-500 mt-1">
+							<span className="mt-1 block text-neutral-500 text-sm">
 								{letter.date} — {letter.author}
 							</span>
 						</button>
@@ -54,7 +54,7 @@ export function ArchiveBrowser({ letters }: ArchiveBrowserProps) {
 				))}
 			</ul>
 
-			{openStory && <PaperLetter story={openStory} onClose={handleClose} />}
+			{openStory ? <PaperLetter story={openStory} onClose={handleClose} /> : null}
 		</>
 	);
 }

@@ -11,7 +11,7 @@ No algorithm. No infinite scroll. Just two stories, daily.
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
 [![GSAP](https://img.shields.io/badge/GSAP-3-88ce02?logo=greensock)](https://gsap.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://soul-papers.vercel.app)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://soul-papers.educalvolopez.com)
 
 ---
 
